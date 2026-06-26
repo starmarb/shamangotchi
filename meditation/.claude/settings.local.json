@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process \"C:\\\\Users\\\\USER\\\\Desktop\\\\meditation\\\\index.html\")",
+      "Bash(node *)"
+    ]
+  }
+}

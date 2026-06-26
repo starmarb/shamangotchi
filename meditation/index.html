@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>신령 다마고치 · 제사상</title>
+<style>
+  :root{
+    --cheong:#1b6ca8; --jeok:#c0392b; --hwang:#e9b949;
+    --baek:#f3efe2; --heuk:#1c1a17; --nok:#2f7d5b; --nok-deep:#13503a; --gold:#caa83f;
+    --lcd:#aebd9a; --lcd-dark:#23301f;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    min-height:100vh; padding:24px;
+    background:radial-gradient(120% 120% at 50% 0%, #2a2620 0%, #161310 60%, #0d0b09 100%);
+    font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    color:var(--baek); overflow-x:hidden; -webkit-tap-highlight-color:transparent;
+  }
+  .device{
+    position:relative; width:min(94vw,420px); aspect-ratio:420/540;
+    border-radius:46% 46% 44% 44% / 38% 38% 46% 46%;
+    background:radial-gradient(130% 90% at 50% 18%, #2a8f6a 0%, var(--nok) 42%, var(--nok-deep) 100%);
+    box-shadow:inset 0 6px 18px rgba(255,255,255,.18), inset 0 -16px 30px rgba(0,0,0,.45),
+      0 26px 60px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.4);
+    border:3px solid #0a3a29;
+    display:flex; flex-direction:column; align-items:center; padding:18px 18px 10px;
+  }
+  .dancheong{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;}
+  .dancheong svg{width:100%;height:100%;display:block;}
+  .hyeonpan{
+    position:relative;z-index:3;margin-top:6px;padding:5px 20px;
+    background:linear-gradient(#10100e,#211d16);border:2px solid var(--gold);border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,.5), inset 0 0 0 2px #000;
+    color:var(--hwang);letter-spacing:.18em;font-size:15px;font-weight:700;
+    text-shadow:0 1px 0 #000;display:flex;gap:10px;align-items:center;
+  }
+  .hyeonpan .han{color:var(--jeok);font-weight:800;}
+  .bezel{
+    position:relative;z-index:3;margin-top:12px;width:74%;padding:13px;border-radius:14px;
+    background:linear-gradient(#23201a,#15130f);
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.08), inset 0 0 0 2px #3a3024;
+    border:2px solid #0a0907;
+  }
+  .lcd-wrap{
+    position:relative;border-radius:6px;overflow:hidden;background:var(--lcd);
+    box-shadow:inset 0 0 18px rgba(0,0,0,.35), inset 0 0 0 1px #5e6a4f;image-rendering:pixelated;
+  }
+  canvas#lcd{display:block;width:100%;height:auto;image-rendering:pixelated;}
+  .lcd-wrap::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px),
+      linear-gradient(120deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 38%);
+    mix-blend-mode:multiply;
+  }
+  .caption{
+    position:relative;z-index:3;margin-top:11px;width:80%;min-height:42px;
+    background:linear-gradient(#f6f1e2,#e7dfc8);border:2px solid #7a5a25;border-radius:6px;
+    box-shadow:inset 0 0 0 2px #c9a85a, 0 2px 5px rgba(0,0,0,.4);
+    color:#2a2114;font-size:12.5px;line-height:1.45;font-weight:600;
+    padding:7px 12px;text-align:center;display:flex;align-items:center;justify-content:center;
+  }
+  .caption .bok{color:var(--jeok);font-weight:800;}
+  .caption .em{color:#1b6ca8;font-weight:800;}
+  .buttons{position:relative;z-index:3;margin-top:14px;margin-bottom:4px;display:flex;gap:30px;}
+  .btn{
+    width:54px;height:54px;border-radius:50%;border:3px solid #0a3a29;
+    background:radial-gradient(circle at 38% 32%, #ffe79a, var(--hwang) 45%, #9c7d22 100%);
+    box-shadow:0 5px 0 #7a3018, 0 8px 12px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.6);
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#3a2a08;font-weight:800;user-select:none;transition:transform .05s, box-shadow .05s;
+  }
+  .btn small{font-size:9px;font-weight:700;opacity:.8;margin-top:1px;}
+  .btn:active,.btn.press{transform:translateY(4px);
+    box-shadow:0 1px 0 #7a3018, 0 3px 6px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.5);}
+  .btn.b{background:radial-gradient(circle at 38% 32%, #ff9d8a, var(--jeok) 50%, #7d1d12 100%);color:#fff;}
+  .hint{
+    max-width:min(94vw,440px);text-align:center;line-height:1.7;
+    font-size:11.5px;color:rgba(243,239,226,.62);letter-spacing:.04em;
+  }
+  .hint b{color:var(--hwang);}
+  .hint .key{
+    display:inline-block;padding:1px 7px;margin:0 1px;border-radius:5px;
+    background:rgba(0,0,0,.35);border:1px solid rgba(202,168,63,.5);
+    color:var(--hwang);font-weight:800;
+  }
+</style>
+</head>
+<body>
+  <div class="device" id="device">
+    <div class="dancheong" aria-hidden="true">
+      <svg viewBox="0 0 420 540" preserveAspectRatio="none">
+        <defs>
+          <pattern id="meori" width="48" height="34" patternUnits="userSpaceOnUse">
+            <rect width="48" height="34" fill="#13503a"/>
+            <path d="M0 34 a24 30 0 0 1 48 0 z" fill="#1b6ca8"/>
+            <path d="M6 34 a18 24 0 0 1 36 0 z" fill="#f3efe2"/>
+            <path d="M12 34 a12 18 0 0 1 24 0 z" fill="#c0392b"/>
+            <path d="M18 34 a6 11 0 0 1 12 0 z" fill="#e9b949"/>
+            <circle cx="24" cy="6" r="3.4" fill="#e9b949"/>
+            <circle cx="0" cy="6" r="3.4" fill="#e9b949"/>
+            <circle cx="48" cy="6" r="3.4" fill="#e9b949"/>
+          </pattern>
+          <radialGradient id="lotus" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f3efe2"/><stop offset="40%" stop-color="#e9b949"/>
+            <stop offset="100%" stop-color="#c0392b"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="420" height="34" fill="url(#meori)"/>
+        <g transform="translate(420,540) rotate(180)"><rect x="0" y="0" width="420" height="34" fill="url(#meori)"/></g>
+        <rect x="0" y="34" width="420" height="4" fill="#e9b949"/>
+        <rect x="0" y="38" width="420" height="3" fill="#c0392b"/>
+        <rect x="0" y="502" width="420" height="3" fill="#c0392b"/>
+        <rect x="0" y="505" width="420" height="4" fill="#e9b949"/>
+        <g id="lotusGroup"></g>
+      </svg>
+    </div>
+
+    <div class="hyeonpan"><span class="han">神靈</span> 신령 다마고치</div>
+    <div class="bezel"><div class="lcd-wrap"><canvas id="lcd" width="168" height="168"></canvas></div></div>
+    <div class="caption" id="caption">제사상에 정성을 올리고, 굿으로 신령을 모셔보세요.</div>
+
+    <div class="buttons">
+      <div class="btn a" id="btnA">▲<small>고르기</small></div>
+      <div class="btn b" id="btnB">●<small>정하기</small></div>
+      <div class="btn c" id="btnC">◀<small>취소</small></div>
+    </div>
+  </div>
+
+  <div class="hint">
+    <span class="key">A</span><span class="key">↑</span> 고르기 ·
+    <span class="key">B</span><span class="key">→</span> 정하기 / 굿 박자 ·
+    <span class="key">C</span><span class="key">←</span><span class="key">Esc</span> 취소 ·
+    <span class="key">M</span> 음소거
+  </div>
+
+<script>
+"use strict";
+/* =========================================================
+   신령 다마고치 — Korean shamanic-god Tamagotchi
+   loop: 제수 차리기 → 굿(리듬) → 신령 강림(상차림+굿 조합) → 반응 → 복/정성
+   features: 굿 rhythm game · 사주/오행 fortune · 신령도감 · save data
+   NOTE: all pixel art below is placeholder — sprite data is isolated
+         in the SPRITES block so it can be swapped without touching logic.
+========================================================= */
+
+/* ---------- corner lotus medallions ---------- */
+(function(){
+  const g=document.getElementById('lotusGroup');
+  const NS="http://www.w3.org/2000/svg";
+  for(const [cx,cy] of [[30,72],[390,72],[30,468],[390,468]]){
+    const grp=document.createElementNS(NS,'g'); grp.setAttribute('transform',`translate(${cx},${cy})`);
+    for(let i=0;i<8;i++){
+      const a=(i*45)*Math.PI/180, px=Math.cos(a)*9, py=Math.sin(a)*9;
+      const p=document.createElementNS(NS,'ellipse');
+      p.setAttribute('cx',px);p.setAttribute('cy',py);p.setAttribute('rx',6);p.setAttribute('ry',3.2);
+      p.setAttribute('transform',`rotate(${i*45} ${px} ${py})`);
+      p.setAttribute('fill', i%2?'#1b6ca8':'#c0392b');p.setAttribute('opacity','.9');grp.appendChild(p);
+    }
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('r',8);c.setAttribute('fill','url(#lotus)');
+    c.setAttribute('stroke','#7a5a25');c.setAttribute('stroke-width','1');grp.appendChild(c);
+    g.appendChild(grp);
+  }
+})();
+
+/* ---------- LCD ---------- */
+const cv=document.getElementById('lcd'), ctx=cv.getContext('2d');
+const W=cv.width, H=cv.height, ON='#23301f', DIM='#5a6b4d';
+ctx.imageSmoothingEnabled=false;
+function spr(s){return s.split('\n').filter(r=>r.length);}
+function draw(sprite,ox,oy,scale=1,color=ON){
+  ctx.fillStyle=color;
+  for(let y=0;y<sprite.length;y++){const row=sprite[y];
+    for(let x=0;x<row.length;x++){const ch=row[x];
+      if(ch!==' '&&ch!=='.')ctx.fillRect(ox+x*scale,oy+y*scale,scale,scale);}}
+}
+function sw(sprite){return Math.max(...sprite.map(r=>r.length));}
+function drawC(sprite,cx,oy,scale,color){draw(sprite,cx-sw(sprite)*scale/2,oy,scale,color);}
+
+/* ===================== SPRITES (swappable art block) ===================== */
+const GOD_SPR = {
+sansin: spr(`
+......####......
+....########....
+..############..
+.####.####.####.
+.....#....#.....
+......####......
+.....#.##.#.....
+.....######.....
+......####......
+.....#.##.#.....
+....##.##.##....
+...##########...
+..############..
+..############..
+..###.####.###..
+..###......###..`),
+yongwang: spr(`
+..#..#..#..#....
+..#..#..#..#....
+...####..####...
+..#####..#####..
+..##.#....#.##..
+..############..
+...#.####.#.....
+....######......
+...#.####.#.....
+..##########....
+.############...
+.####....####...
+.###.####.###...
+.###......###...
+..##......##....
+..##......##....`),
+samsin: spr(`
+.......##.......
+......####......
+......####......
+.....######.....
+.....######.....
+....#.####.#....
+....########....
+.....#.##.#.....
+......####......
+.....######.....
+....########....
+...##########...
+..############..
+..###.####.###..
+..###.####.###..
+..###......###..`),
+daegam: spr(`
+....########....
+....########....
+...##########...
+..############..
+.....####.......
+....######......
+....#.##.#......
+....######......
+.....####.......
+....######......
+...########..##.
+..##########.##.
+.############.#.
+.####....####...
+.###......###...
+.###......###...`),
+jowang: spr(`
+.......##.......
+......####......
+......####......
+.....######.....
+....#.####.#....
+....########....
+.....#.##.#.....
+......####......
+.....######.....
+....########....
+...##########...
+..####.##.####..
+..###.####.###..
+.##.#.####.#.##.
+.#..#.####.#..#.
+....#.#..#.#....`),
+chilseong: spr(`
+..#...#....#....
+.....#...#...#..
+....#.......#...
+.......##.......
+......####......
+.....#.##.#.....
+.....######.....
+......####......
+.....######.....
+....########....
+...##########...
+..############..
+..############..
+..####.##.####..
+..###......###..
+..###......###..`),
+changbu: spr(`
+.......##.......
+......####......
+......####......
+.....######.....
+.##..######..##.
+.###.#.##.#.###.
+..##.######.##..
+....########....
+...###.##.###...
+..###..##..###..
+.###...##...###.
+.##....##....##.
+.......##.......
+......####......
+.....##..##.....
+....##....##....`),
+saja: spr(`
+.....######.....
+....########....
+......####......
+.....#....#.....
+.....#.##.#.....
+......####......
+......####......
+......####......
+.....######.....
+.....######.....
+.....######.....
+.....######.....
+.....######.....
+.....######.....
+.....#....#.....
+.....#....#.....`),
+};
+
+const FOOD_SPR = {
+baekseolgi:spr(`
+............
+..########..
+.##########.
+.##########.
+.##########.
+.##########.
+.##########.
+.##########.
+.##########.
+..########..`),
+sirutteok:spr(`
+..########..
+.##########.
+.#.#.#.#.#.#
+.##########.
+.#.#.#.#.#.#
+.##########.
+.#.#.#.#.#.#
+.##########.
+..########..`),
+bae:spr(`
+.....##.....
+....#..#....
+....####....
+...######...
+..########..
+.##########.
+.##########.
+.##########.
+..########..
+...######...`),
+sagwa:spr(`
+.....#......
+....##......
+...####.....
+..########..
+.##########.
+.##########.
+.##########.
+.##########.
+..########..
+...#....#...`),
+bukeo:spr(`
+.........###
+......####.##
+..#########.#
+.###########.
+#####.#######
+.###########.
+..#########.#
+......####.##
+.........###`),
+sool:spr(`
+....##....
+....##....
+...####...
+...####...
+..######..
+..#....#..
+..#.##.#..
+..#.##.#..
+..#.##.#..
+..######..`),
+dwaeji:spr(`
+..########..
+.##########.
+##.######.##
+##.######.##
+############
+##.#.##.#.##
+############
+.##.####.##.
+..##....##..`),
+jeonghwasu:spr(`
+............
+.#.#.#.#.#.#
+.##########.
+..########..
+..########..
+..########..
+...######...
+....####....`),
+miyeok:spr(`
+.#..#...#...
+..#####.#.#.
+.##.##.###..
+.##########.
+..########..
+..########..
+...######...
+....####....`),
+};
+const FOOD_NAME={baekseolgi:'백설기',sirutteok:'시루떡',bae:'배',sagwa:'사과',bukeo:'북어포',sool:'정종(술)',dwaeji:'돼지머리',jeonghwasu:'정화수',miyeok:'미역국'};
+const FOOD_IDS=Object.keys(FOOD_SPR);
+
+const E={
+heart:spr(`.##.##.\n#######\n#######\n.#####.\n..###..\n...#...`),
+star:spr(`...#...\n...#...\n#######\n.#####.\n.#####.\n.#.#.#.`),
+note:spr(`....##\n....##\n....##\n.#..##\n##..#.\n##....`),
+anger:spr(`#..#..#\n.#.#.#.\n..###..\n.#.#.#.\n#..#..#`),
+bang:spr(`.###.\n.###.\n.###.\n.###.\n.....\n.###.`),
+sweat:spr(`..#..\n..#..\n.###.\n#####\n#####\n.###.`),
+bless:spr(`#..#..#\n.#.#.#.\n..###..\n#######\n..###..\n.#.#.#.\n#..#..#`),
+gloom:spr(`..####..\n.######.\n########\n.######.\n..#..#..\n.#..#...`),
+zzz:spr(`####.\n...#.\n..#..\n.#...\n####.`),
+};
+
+/* 오행 element icons */
+const EL={
+mok:spr(`....##....\n...####...\n..######..\n....##....\n....##....\n...####...`),
+hwa:spr(`....#.....\n...##.....\n..#.##....\n..#..#....\n.#...##...\n.#..#.#...\n..##..##..\n...####...`),
+to:spr(`....#.....\n...###....\n..##.##...\n.##...##..\n##.....##.\n##########`),
+geum:spr(`..######..\n.########.\n##.####.##\n##.####.##\n.########.\n..######..`),
+su:spr(`....#.....\n...###....\n..#####...\n.#######..\n.#######..\n..#####...\n...###....`),
+};
+const EL_NAME={mok:'목(木)',hwa:'화(火)',to:'토(土)',geum:'금(金)',su:'수(水)'};
+const EL_KEYS=['mok','hwa','to','geum','su'];
+
+/* UI icons for home menu */
+const UI={
+table:spr(`...####...\n..######..\n.########.\n##########\n.########.\n..######..`),
+drum:spr(`.######.\n.######.\n..####..\n...##...\n...##...\n..####..\n.######.\n.######.`),
+scroll:spr(`########\n........\n########\n...##...\n########\n........`),
+book:spr(`.########.\n##.####.##\n##.####.##\n##.####.##\n##.####.##\n.########.`),
+};
+const NOTE_SPR=spr(`.##.\n####\n####\n.##.`);
+
+/* tiny 3x5 digits */
+const DIG={'0':['###','#.#','#.#','#.#','###'],'1':['..#','..#','..#','..#','..#'],
+'2':['###','..#','###','#..','###'],'3':['###','..#','###','..#','###'],
+'4':['#.#','#.#','###','..#','..#'],'5':['###','#..','###','..#','###'],
+'6':['###','#..','###','#.#','###'],'7':['###','..#','..#','..#','..#'],
+'8':['###','#.#','###','#.#','###'],'9':['###','#.#','###','..#','###']};
+function drawNum(n,x,y,scale=1.4,color=ON){const s=String(n);
+  for(let i=0;i<s.length;i++)draw(DIG[s[i]]||DIG['0'],x+i*(4*scale),y,scale,color);}
+
+/* ===================== GODS DATA ===================== */
+const GODS=[
+ {id:'sansin',name:'산신령',honor:'산신령(山神靈)',el:'mok',sprite:GOD_SPR.sansin,
+  likes:['bae','sagwa','baekseolgi'],hates:['dwaeji','bukeo'],
+  bless:'산을 굽어보며 흡족해하신다',lore:'산을 다스리는 신. 호랑이를 거느리며 맑은 과일과 떡을 즐기신다.'},
+ {id:'yongwang',name:'용왕님',honor:'용왕님(龍王)',el:'su',sprite:GOD_SPR.yongwang,
+  likes:['bukeo','jeonghwasu','sirutteok'],hates:['dwaeji'],
+  bless:'바다가 잔잔해진다',lore:'바다와 물을 다스리는 용왕. 비린 제물과 정화수를 받으신다.'},
+ {id:'samsin',name:'삼신할머니',honor:'삼신할머니',el:'to',sprite:GOD_SPR.samsin,
+  likes:['miyeok','jeonghwasu','baekseolgi'],hates:['sool','dwaeji'],
+  bless:'무병장수를 점지하신다',lore:'출산과 수명을 점지하는 할머니 신. 정갈한 흰 음식만 받으신다.'},
+ {id:'daegam',name:'대감신',honor:'대감신(大監)',el:'geum',sprite:GOD_SPR.daegam,
+  likes:['sool','dwaeji','sirutteok'],hates:['jeonghwasu'],
+  bless:'재물 복을 한아름 안기신다',lore:'재물과 권세를 관장하는 신. 술과 고기로 한바탕 대접해야 흡족하시다.'},
+ {id:'jowang',name:'조왕신',honor:'조왕신(竈王)',el:'hwa',sprite:GOD_SPR.jowang,
+  likes:['jeonghwasu','baekseolgi','miyeok'],hates:['sool','dwaeji'],
+  bless:'부엌의 불씨가 든든해진다',lore:'부엌과 불을 지키는 신. 새벽 정화수를 가장 귀히 여기신다.'},
+ {id:'chilseong',name:'칠성신',honor:'칠성신(七星)',el:'su',sprite:GOD_SPR.chilseong,
+  likes:['jeonghwasu','baekseolgi','bae'],hates:['dwaeji','bukeo'],
+  bless:'수명과 자손의 복을 내리신다',lore:'북두칠성의 신. 수명·자손을 관장하며 정화수와 흰떡을 받으신다.'},
+ {id:'changbu',name:'창부신',honor:'창부신(倡夫)',el:'hwa',sprite:GOD_SPR.changbu,
+  likes:['sool','sirutteok','sagwa'],hates:['jeonghwasu'],
+  bless:'흥과 예능의 복을 흩뿌리신다',lore:'광대·예인의 신. 신명나는 굿을 무엇보다 좋아하신다. 굿이 좋으면 크게 기뻐하신다.'},
+ {id:'saja',name:'저승사자',honor:'저승사자(使者)',el:'geum',sprite:GOD_SPR.saja,
+  likes:['sool','sirutteok'],hates:['sagwa','bae','jeonghwasu'],
+  bless:'액운을 거두어 가신다',lore:'저승의 사자. 굿이 어지럽거나 상이 부실하면 불청객으로 찾아든다.'},
+];
+const GOD_BY_ID=Object.fromEntries(GODS.map(g=>[g.id,g]));
+
+/* ===================== SAVE / STATE ===================== */
+const SAVE_KEY='sinryeong_save_v1';
+function loadSave(){
+  try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(s&&typeof s==='object')return s;}catch(e){}
+  return null;
+}
+function persist(){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({
+    bok:state.bok,jeongseong:Math.round(state.jeongseong),visits:state.visits,
+    unlocked:[...state.unlocked]}));}catch(e){}
+}
+const saved=loadSave();
+
+const MODE={ALTAR:'altar',MENU:'menu',GUT:'gut',VISIT:'visit',FORTUNE:'fortune',DEX:'dex',STATUS:'status'};
+const HOME_ICONS=[
+ {key:'table',label:'제수 차리기',mode:MODE.MENU},
+ {key:'drum', label:'굿 — 신령 모시기',mode:'GUT_START'},
+ {key:'scroll',label:'오늘의 점(占)',mode:MODE.FORTUNE},
+ {key:'book', label:'신령도감',mode:MODE.DEX},
+ {key:'heart',label:'정성·복(福) 상태',mode:MODE.STATUS},
+];
+const MAX_SLOTS=3;
+
+let state={
+  mode:MODE.ALTAR, homeIdx:0,
+  slots:[], menuIdx:0, dexIdx:0,
+  jeongseong: saved?saved.jeongseong:60,
+  bok: saved?saved.bok:0,
+  visits: saved?saved.visits:0,
+  unlocked: new Set(saved&&saved.unlocked?saved.unlocked:[]),
+  t:0, gut:null, visit:null, fortune:null,
+};
+
+/* ===================== 사주 / 오행 FORTUNE ===================== */
+const STEM_EL=['mok','mok','hwa','hwa','to','to','geum','geum','su','su']; // 갑을병정무기경신임계
+const BRANCH_EL=['su','to','mok','mok','to','hwa','hwa','to','geum','geum','to','su']; // 자축인묘진사오미신유술해
+const STEM_HAN=['갑','을','병','정','무','기','경','신','임','계'];
+const BRANCH_HAN=['자','축','인','묘','진','사','오','미','신','유','술','해'];
+function jdnOf(y,m,d){const a=Math.floor((14-m)/12);const yy=y+4800-a;const mm=m+12*a-3;
+  return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045;}
+function computeFortune(dt){
+  const y=dt.getFullYear(), m=dt.getMonth()+1, d=dt.getDate();
+  const j=jdnOf(y,m,d);
+  const dayStem=(j+9)%10, dayBranch=(j+1)%12;          // verified 甲子-anchored
+  const yrStem=((y-4)%10+10)%10, yrBranch=((y-4)%12+12)%12;
+  // tally 오행 from year & day pillars (day weighted higher)
+  const tally={mok:0,hwa:0,to:0,geum:0,su:0};
+  tally[STEM_EL[dayStem]]+=2; tally[BRANCH_EL[dayBranch]]+=1.5;
+  tally[STEM_EL[yrStem]]+=1;  tally[BRANCH_EL[yrBranch]]+=1;
+  let dominant='to', best=-1;
+  for(const k of EL_KEYS){ if(tally[k]>best){best=tally[k];dominant=k;} }
+  const readings={
+    mok:'목(木) 기운이 짙은 날. <span class="em">산신령</span>이 가까이 계신다.',
+    hwa:'화(火) 기운이 타오르는 날. <span class="em">조왕신·창부신</span>이 흥겨워하신다.',
+    to:'토(土) 기운이 두터운 날. <span class="em">삼신할머니</span>의 보살핌이 깊다.',
+    geum:'금(金) 기운이 서린 날. <span class="em">대감신</span>이 재물을 살피신다.',
+    su:'수(水) 기운이 흐르는 날. <span class="em">용왕님·칠성신</span>이 물길을 여신다.',
+  };
+  return {y,m,d,tally,dominant,
+    dayPillar:STEM_HAN[dayStem]+BRANCH_HAN[dayBranch],
+    yearPillar:STEM_HAN[yrStem]+BRANCH_HAN[yrBranch],
+    reading:readings[dominant]};
+}
+state.fortune=computeFortune(new Date());
+
+/* ===================== CAPTION / SOUND ===================== */
+const capEl=document.getElementById('caption');
+function say(html){capEl.innerHTML=html;}
+let muted=false, actx=null;
+function ac(){actx=actx||new (window.AudioContext||window.webkitAudioContext)();return actx;}
+function beep(freq=600,dur=0.06,type='square',vol=0.05){
+  if(muted)return;
+  try{const a=ac(),o=a.createOscillator(),g=a.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(a.destination);
+    o.start();g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+dur);o.stop(a.currentTime+dur);}catch(e){}
+}
+function chord(){beep(523,.09);setTimeout(()=>beep(659,.09),70);setTimeout(()=>beep(784,.14),150);}
+function buzz(){beep(160,.12,'sawtooth',.06);setTimeout(()=>beep(120,.16,'sawtooth',.06),110);}
+/* 장구 drum: 덩(low) / 덕(high) */
+function drumLow(){if(muted)return;try{const a=ac(),o=a.createOscillator(),g=a.createGain();
+  o.type='sine';o.frequency.setValueAtTime(150,a.currentTime);o.frequency.exponentialRampToValueAtTime(70,a.currentTime+.12);
+  g.gain.setValueAtTime(.13,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.18);
+  o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.2);}catch(e){}}
+function drumHigh(){if(muted)return;try{const a=ac();const b=a.createBuffer(1,1100,a.sampleRate);
+  const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const s=a.createBufferSource();s.buffer=b;const g=a.createGain();g.gain.value=.09;
+  const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=1800;
+  s.connect(f);f.connect(g);g.connect(a.destination);s.start();}catch(e){}}
+
+/* ===================== SCENE HELPERS ===================== */
+function clearLCD(){ctx.fillStyle='#aebd9a';ctx.fillRect(0,0,W,H);}
+function drawHUD(){
+  const hearts=Math.round(state.jeongseong/20);
+  for(let i=0;i<5;i++)draw(E.heart,4+i*11,3,1.3,i<hearts?ON:DIM);
+  draw(E.star,W-56,3,1.3,ON);drawNum(state.bok,W-37,4,1.3);
+}
+function drawTable(){
+  const topY=H-30;
+  ctx.fillStyle=ON;ctx.fillRect(10,topY,W-20,4);ctx.fillRect(14,H-12,5,12);ctx.fillRect(W-19,H-12,5,12);
+  ctx.fillStyle=DIM;ctx.fillRect(0,H-1,W,1);
+  const slotX=[40,84,128];
+  for(let i=0;i<MAX_SLOTS;i++){const id=state.slots[i];
+    if(id){const s=FOOD_SPR[id];drawC(s,slotX[i],topY-24,1.5,ON);}}
+}
+function drawCandles(){
+  const fl=Math.floor(state.t/180)%2;ctx.fillStyle=ON;
+  ctx.fillRect(20,H-44,3,8);ctx.fillRect(21,H-48-fl,1,4+fl);
+  ctx.fillRect(W-23,H-44,3,8);ctx.fillRect(W-22,H-48-fl,1,4+fl);
+}
+function drawHomeBar(){
+  const n=HOME_ICONS.length, gap=30, startX=W/2-(n-1)*gap/2;
+  for(let i=0;i<n;i++){
+    const ic=HOME_ICONS[i], x=startX+i*gap;
+    const sprite= ic.key==='heart'?E.heart:UI[ic.key];
+    drawC(sprite,x,18,1.1, i===state.homeIdx?ON:DIM);
+    if(i===state.homeIdx){ctx.fillStyle=ON;ctx.fillRect(x-9,32,18,2);}
+  }
+}
+
+/* ===================== 굿 RHYTHM GAME ===================== */
+const GUT_LINE=128, GUT_SPAWN=8, GUT_LEAD=1100;
+function startGut(){
+  if(state.slots.length===0){say('상이 비어 있습니다. 먼저 제수를 올리세요.');buzz();return;}
+  // 굿거리 느낌의 박자 패턴
+  const intervals=[600,600,300,300,600,600,300,300,600,600];
+  let t=900, times=[];
+  for(const iv of intervals){times.push(t);t+=iv;}
+  state.gut={notes:times.map(tt=>({t:tt,judged:false,score:0})),end:t+700,
+    hits:0,combo:0,maxCombo:0,judge:'',judgeT:-9999,lastBeat:-1};
+  state.mode=MODE.GUT;
+  say('굿을 시작합니다 — 북소리에 맞춰 <b>B</b>를 두드리세요!');
+}
+function gutTime(){return state.t;}  // gut uses absolute clock offset
+let gutStart=0;
+function gutElapsed(){return state.t-gutStart;}
+function gutTick(dt){
+  const g=state.gut, e=gutElapsed();
+  // drum metronome on each note time
+  for(let i=0;i<g.notes.length;i++){
+    const nt=g.notes[i];
+    if(!nt.beat && e>=nt.t-16 && e<=nt.t+16){nt.beat=true; (i%2? drumHigh():drumLow());}
+    // auto-miss notes that passed the window
+    if(!nt.judged && e>nt.t+200){nt.judged=true;nt.score=0;g.combo=0;g.judge='놓침';g.judgeT=e;}
+  }
+  if(e>g.end){endGut();}
+}
+function gutTap(){
+  const g=state.gut, e=gutElapsed();
+  let best=null,bd=1e9;
+  for(const nt of g.notes){if(nt.judged)continue;const d=Math.abs(nt.t-e);if(d<bd){bd=d;best=nt;}}
+  if(!best||bd>260){beep(300,.03);return;}            // stray tap
+  best.judged=true;
+  if(bd<=70){best.score=1;g.judge='딱!';drumHigh();}
+  else if(bd<=140){best.score=0.65;g.judge='좋아!';drumHigh();}
+  else {best.score=0.35;g.judge='빗나감';drumLow();}
+  if(best.score>=0.65){g.combo++;g.maxCombo=Math.max(g.maxCombo,g.combo);}else g.combo=0;
+  g.judgeT=e; g.hits+=best.score;
+  beep(700+best.score*300,.04);
+}
+function gutPerf(){const g=state.gut;return Math.round(100*g.hits/g.notes.length);}
+function endGut(){
+  const perf=gutPerf();
+  say(`굿이 끝났다. 정성 ${perf}점 — 신령을 모십니다…`);
+  summonGod(perf);
+}
+function renderGut(){
+  const g=state.gut, e=gutElapsed();
+  ctx.fillStyle=DIM;ctx.fillRect(8,86,W-16,2);             // track
+  ctx.fillStyle=ON;ctx.fillRect(GUT_LINE-1,74,2,26);        // judgment line
+  drawC(UI.drum,GUT_LINE+18,78,1.4,ON);                     // 장구
+  for(const nt of g.notes){
+    if(nt.judged && e>nt.t+200)continue;
+    const x= 6 + (e-(nt.t-GUT_LEAD))/GUT_LEAD*(GUT_LINE-6);
+    if(x<-6||x>W)continue;
+    draw(NOTE_SPR, x-4, 81, 2, nt.judged?DIM:ON);
+  }
+  // combo + judge text
+  if(g.combo>1){drawNum(g.combo,W/2-8,40,2,ON);}
+  if(e-g.judgeT<450 && g.judge){ /* judge shown via caption */ }
+  // tap hint pulse
+  if(Math.floor(e/250)%2)draw(E.bang,GUT_LINE-3,58,1.4,ON);
+  say(`굿거리 — <b>${g.judge||'…'}</b>${g.combo>1?` · ${g.combo}연타`:''}`);
+}
+
+/* ===================== SUMMON (food + 굿 조합) ===================== */
+function foodFit(god){
+  let f=0;for(const id of state.slots){
+    if(god.likes.includes(id))f+=2; else if(god.hates.includes(id))f-=2; else f+=0.5;}
+  return f;
+}
+function summonGod(perf){
+  const dom=state.fortune.dominant;
+  // botched 굿 + poor spread invites 저승사자
+  const spreadAvg=state.slots.length? state.slots.reduce((a,id)=>a+(GODS.some(g=>g.likes.includes(id))?1:0),0)/state.slots.length : 0;
+  let pick;
+  if(perf<25 && Math.random()<0.6){
+    pick=GOD_BY_ID.saja;
+  }else{
+    const weighted=GODS.map(g=>{
+      let w=Math.max(0.25, foodFit(g)+2.2);
+      w*=(0.4+perf/100);                 // 굿 quality amplifies the call
+      if(g.el===dom)w*=1.6;              // favored by today's 오행
+      if(g.id==='changbu')w*=(0.6+perf/80); // 창부신 loves a good 굿
+      if(g.id==='saja')w*=0.4;           // rarely on a decent 굿
+      return {g,w};
+    });
+    const tot=weighted.reduce((a,x)=>a+x.w,0);
+    let r=Math.random()*tot; pick=weighted[0].g;
+    for(const x of weighted){r-=x.w; if(r<=0){pick=x.g;break;}}
+  }
+  state.visits++;
+  state.visit={god:pick,perf,phase:'enter',pt:0,eatIdx:0,score:0,emote:null,gained:0};
+  state.mode=MODE.VISIT;
+  say(`<b>${pick.honor}</b>께서 강림하셨다…`);
+  chord();
+  persist();
+}
+
+/* ===================== VISIT CHOREOGRAPHY ===================== */
+function visitTick(dt){
+  const v=state.visit;v.pt+=dt;
+  switch(v.phase){
+    case 'enter': if(v.pt>=700){v.phase='bow';v.pt=0;say(`${v.god.name}이(가) 상 앞에 절을 올린다.`);beep(440,.07);}break;
+    case 'bow':   if(v.pt>=650){v.phase='eat';v.pt=0;eatNext();}break;
+    case 'eat':   if(v.pt>=820){v.pt=0;eatNext();}break;
+    case 'verdict':if(v.pt>=1700){v.phase='leave';v.pt=0;}break;
+    case 'leave': if(v.pt>=750){finishVisit();}break;
+  }
+}
+function eatNext(){
+  const v=state.visit,g=v.god;
+  if(state.slots.length===0){computeVerdict();return;}
+  const id=state.slots[0];let r,em;
+  if(g.likes.includes(id)){r=2;em='heart';beep(720,.06);}
+  else if(g.hates.includes(id)){r=-2;em='anger';beep(180,.1,'sawtooth');}
+  else{r=1;em='note';beep(520,.05);}
+  v.score+=r;v.emote=em;
+  say(`${g.name}이(가) <b>${FOOD_NAME[id]}</b>을(를) ${r>0?'맛있게 드신다':'언짢게 물리신다'}.`);
+  state.slots.shift();
+}
+// 굿 솜씨가 허락하는 '최고 기분'. 굿은 신을 맞이하는 환대이므로,
+// 아무리 상이 좋아도 굿이 없으면 좋은 반응에 닿을 수 없다.
+// 4 대길 · 3 흡족 · 2 미적지근 · 1 떨떠름 · 0 노여움
+function perfCeiling(perf, changbu){
+  const t = changbu ? [72,52,32] : [60,40,20];  // 창부신은 더 큰 환대를 요구한다
+  if(perf>=t[0]) return 4;     // 좋은 굿 — 대길까지 허용
+  if(perf>=t[1]) return 3;     // 그럭저럭 — 흡족까지
+  if(perf>=t[2]) return 2;     // 부실한 굿 — 미적지근이 한계
+  return 1;                    // 굿을 통째로 놓침 — 결코 미적지근에 이르지 못한다
+}
+function computeVerdict(){
+  const v=state.visit,g=v.god;v.phase='verdict';v.pt=0;
+  const changbu = g.id==='changbu';
+  // 굿 솜씨를 점수로 환산 — 50점이 본전. 잘하면 더해지고 못하면 깎인다(상차림 보정).
+  const span = changbu?16:25;
+  const perfMod = Math.round((v.perf-50)/span);     // 일반 -2..+2 · 창부 -3..+3
+  const total = v.score+perfMod;
+  // 상차림이 정한 기본 기분
+  const baseTier = total>=5?4 : total>=2?3 : total>=0?2 : total>=-2?1 : 0;
+  // 굿이 씌우는 천장으로 깎아낸다
+  const ceiling = perfCeiling(v.perf, changbu);
+  const tier = Math.min(baseTier, ceiling);
+  const cappedByGut = tier < baseTier;              // 상은 좋았으나 굿이 끌어내림
+  const gutNote = (perfMod<0||cappedByGut) ? ' <span class="em">(굿이 부실해 신명이 나지 않는다)</span>' : '';
+  if(!state.unlocked.has(g.id))state.unlocked.add(g.id);
+
+  if(tier===4){v.emote='bless';const gain=4+Math.max(0,total-5);state.bok+=gain;state.jeongseong=Math.min(100,state.jeongseong+18);v.gained=gain;
+    say(`${g.name}께서 크게 기뻐하신다 — ${g.bless}. <span class="bok">福 +${gain}</span>`);chord();}
+  else if(tier===3){v.emote='star';const gain=2;state.bok+=gain;state.jeongseong=Math.min(100,state.jeongseong+8);v.gained=gain;
+    say(`${g.name}이(가) 흡족해하신다. <span class="bok">福 +${gain}</span>`);beep(660,.1);}
+  else if(tier===2){v.emote='sweat';say(`${g.name}이(가) 미적지근한 표정을 지으신다.${gutNote}`);beep(330,.1);}
+  else if(tier===1){v.emote='gloom';state.jeongseong=Math.max(0,state.jeongseong-6);
+    say(cappedByGut && v.score>=2
+      ? `${g.name}이(가) 상은 잘 받으셨으나, 굿이 없어 서운해하신다.`
+      : `${g.name}이(가) 떨떠름해하신다.${gutNote||' 정성이 조금 모자랐다.'}`);
+    beep(247,.12);setTimeout(()=>beep(196,.12),100);}
+  else{v.emote='anger';state.jeongseong=Math.max(0,state.jeongseong-14);
+    say(`${g.name}이(가) 노하여 발걸음을 돌리신다…${gutNote}`);buzz();}
+  persist();
+}
+function finishVisit(){
+  state.mode=MODE.ALTAR;state.gut=null;
+  const v=state.visit;state.visit=null;
+  if(!state.unlocked.has(v.god.id)) {} // already added
+  say(`${state.unlocked.size}/${GODS.length} 신령을 모셨습니다. 다시 상을 차려보세요.`);
+}
+function godBob(){return 32+(Math.floor(state.t/350)%2?0:2);}
+function renderVisit(){
+  drawCandles();drawTable();
+  const v=state.visit, gy=godBob(), ax=W/2-32;
+  let gx=ax;
+  if(v.phase==='enter'){const p=Math.min(1,v.pt/700);gx=-72+(ax+72)*(1-Math.pow(1-p,3));}
+  if(v.phase==='leave'){const p=Math.min(1,v.pt/750);gx=ax+(W+20-ax)*(p*p*p);}
+  draw(v.god.sprite,gx,gy,4,ON);
+  if(v.phase==='bow')drawC(spr('.#.\n###\n.#.'),W/2,24,2,ON);
+  if(v.phase==='eat'&&v.emote&&Math.floor(state.t/250)%2)draw(E[v.emote],ax+66,gy-2,1.6,ON);
+  if(v.phase==='verdict'&&v.emote)drawC(E[v.emote],W/2,18,2.4,ON);
+}
+
+/* ===================== RENDER ===================== */
+function render(){
+  clearLCD();
+  if(state.mode!==MODE.GUT&&state.mode!==MODE.VISIT)drawHUD();
+  if(state.mode===MODE.ALTAR){
+    drawHomeBar();drawCandles();drawTable();
+    if(state.slots.length===0){if(Math.floor(state.t/600)%2)drawC(E.zzz,W/2,58,1.6,DIM);}
+    else if(Math.floor(state.t/300)%2)drawC(E.bless,W/2,52,1.4,DIM);
+  }
+  else if(state.mode===MODE.MENU){
+    const id=FOOD_IDS[state.menuIdx];drawC(FOOD_SPR[id],W/2,40,3,ON);
+    draw(spr('.#.\n##.\n###\n##.\n.#.'),16,66,2,ON);
+    draw(spr('.#.\n.##\n###\n.##\n.#.'),W-28,66,2,ON);
+    for(let i=0;i<FOOD_IDS.length;i++){ctx.fillStyle=i===state.menuIdx?ON:DIM;
+      ctx.fillRect(W/2-FOOD_IDS.length*5/2+i*5,118,3,3);}
+    drawTable();
+  }
+  else if(state.mode===MODE.GUT){renderGut();}
+  else if(state.mode===MODE.VISIT){renderVisit();}
+  else if(state.mode===MODE.FORTUNE){renderFortune();}
+  else if(state.mode===MODE.DEX){renderDex();}
+  else if(state.mode===MODE.STATUS){renderStatus();}
+}
+const PTR=spr(`#..\n##.\n###\n##.\n#..`);  // ▶ dominant pointer
+function renderFortune(){
+  const f=state.fortune;
+  const maxv=Math.max(...EL_KEYS.map(k=>f.tally[k]),1);
+  const top=24, rowH=27, segs=8, barX=42, barW=W-barX-12, segW=barW/segs;
+  for(let i=0;i<EL_KEYS.length;i++){
+    const k=EL_KEYS[i], y=top+i*rowH, isDom=k===f.dominant;
+    if(isDom) draw(PTR, 6, y+2, 1.6, ON);              // mark the dominant energy
+    draw(EL[k], 18, y, 1.3, isDom?ON:DIM);             // element icon
+    const filled=Math.round((f.tally[k]/maxv)*segs);   // segmented meter
+    for(let s=0;s<segs;s++){
+      const sx=barX+s*segW;
+      if(s<filled){ctx.fillStyle=ON;ctx.fillRect(sx,y,segW-2,15);}
+      else{ctx.fillStyle=DIM;ctx.fillRect(sx,y+7,segW-2,2);}
+    }
+  }
+}
+function renderDex(){
+  const g=GODS[state.dexIdx], known=state.unlocked.has(g.id);
+  drawNum(state.unlocked.size,8,4,1.3,ON);ctx.fillStyle=ON;ctx.fillRect(20,12,6,2);drawNum(GODS.length,28,4,1.3,ON);
+  if(known){
+    draw(g.sprite,W/2-32,30,4,ON);
+    drawC(EL[g.el],W/2,104,1.4,ON);
+  }else{
+    // silhouette + ???
+    draw(g.sprite,W/2-32,30,4,DIM);
+    drawC(spr('###\n#.#\n..#\n.#.\n...\n.#.'),W/2,104,2.4,ON); // "?"
+  }
+  // page arrows
+  draw(spr('.#.\n##.\n###\n##.\n.#.'),6,80,1.6,ON);
+  draw(spr('.#.\n.##\n###\n.##\n.#.'),W-16,80,1.6,ON);
+  say(known? `<b>${g.honor}</b> — ${g.lore}` : `??? — 아직 모시지 못한 신령입니다.`);
+}
+function renderStatus(){
+  const hearts=Math.round(state.jeongseong/20);
+  for(let i=0;i<5;i++)draw(E.heart,16+i*28,38,3,i<hearts?ON:DIM);
+  draw(E.star,16,86,3,ON);drawNum(state.bok,52,90,3);
+  draw(UI.book,16,124,1.2,ON);drawNum(state.visits,40,124,1.6);
+}
+
+/* ===================== INPUT ===================== */
+function pressA(){
+  beep(880,.04);
+  if(state.mode===MODE.ALTAR){state.homeIdx=(state.homeIdx+1)%HOME_ICONS.length;say(HOME_ICONS[state.homeIdx].label);}
+  else if(state.mode===MODE.MENU){state.menuIdx=(state.menuIdx+1)%FOOD_IDS.length;say(`<b>${FOOD_NAME[FOOD_IDS[state.menuIdx]]}</b> — B로 상에 올립니다.`);}
+  else if(state.mode===MODE.DEX){state.dexIdx=(state.dexIdx+1)%GODS.length;}
+  else if(state.mode===MODE.FORTUNE||state.mode===MODE.STATUS){state.mode=MODE.ALTAR;say('제사상으로 돌아왔습니다.');}
+}
+function pressB(){
+  beep(740,.05);
+  if(state.mode===MODE.ALTAR){
+    const ic=HOME_ICONS[state.homeIdx];
+    if(ic.mode==='GUT_START'){gutStart=state.t+1;startGut();}
+    else if(ic.mode===MODE.MENU){state.mode=MODE.MENU;state.menuIdx=0;say(`제수를 고르세요: <b>${FOOD_NAME[FOOD_IDS[0]]}</b>`);}
+    else if(ic.mode===MODE.FORTUNE){state.mode=MODE.FORTUNE;}
+    else if(ic.mode===MODE.DEX){state.mode=MODE.DEX;state.dexIdx=0;
+      const g=GODS[0];say(state.unlocked.has(g.id)?`<b>${g.honor}</b> — ${g.lore}`:'??? — 아직 모시지 못한 신령입니다.');}
+    else if(ic.mode===MODE.STATUS){state.mode=MODE.STATUS;say(`정성과 복(福)을 살핍니다. 모신 횟수 ${state.visits}회.`);}
+  }
+  else if(state.mode===MODE.MENU){
+    if(state.slots.length>=MAX_SLOTS){say('상이 가득 찼습니다(최대 3). 굿으로 신령을 모시세요.');buzz();return;}
+    const id=FOOD_IDS[state.menuIdx];state.slots.push(id);state.jeongseong=Math.min(100,state.jeongseong+4);
+    beep(523,.05);setTimeout(()=>beep(659,.06),60);persist();
+    if(state.slots.length>=MAX_SLOTS){
+      state.mode=MODE.ALTAR;
+      say('상이 가득 찼습니다 (3/3). 굿으로 신령을 모시세요.');
+    } else {
+      say(`<b>${FOOD_NAME[id]}</b>을(를) 올렸다. (${state.slots.length}/${MAX_SLOTS}) — 더 올리거나 <b>C</b>로 마칩니다.`);
+    }
+  }
+  else if(state.mode===MODE.GUT){gutTap();}
+  else if(state.mode===MODE.VISIT){const v=state.visit;
+    if(v.phase==='verdict'){v.phase='leave';v.pt=600;} }
+}
+function pressC(){
+  beep(300,.05);
+  if(state.mode===MODE.MENU){state.mode=MODE.ALTAR;say(state.slots.length?'상차림을 마쳤습니다. 굿으로 신령을 모시세요.':'제사상으로 돌아왔습니다.');}
+  else if(state.mode===MODE.GUT){state.mode=MODE.ALTAR;state.gut=null;say('굿을 멈췄습니다.');}
+  else if(state.mode===MODE.DEX||state.mode===MODE.FORTUNE||state.mode===MODE.STATUS){state.mode=MODE.ALTAR;say('제사상으로 돌아왔습니다.');}
+  else if(state.mode===MODE.ALTAR){state.homeIdx=(state.homeIdx-1+HOME_ICONS.length)%HOME_ICONS.length;say(HOME_ICONS[state.homeIdx].label);}
+}
+function flash(el){el.classList.add('press');setTimeout(()=>el.classList.remove('press'),90);}
+const bA=document.getElementById('btnA'),bB=document.getElementById('btnB'),bC=document.getElementById('btnC');
+bA.onclick=()=>{flash(bA);pressA();};bB.onclick=()=>{flash(bB);pressB();};bC.onclick=()=>{flash(bC);pressC();};
+window.addEventListener('keydown',e=>{
+  if(e.repeat)return;
+  if(['ArrowUp','a','A'].includes(e.key)){flash(bA);pressA();}
+  else if(['ArrowRight','b','B','Enter',' '].includes(e.key)){e.preventDefault();flash(bB);pressB();}
+  else if(['ArrowLeft','c','C','Escape'].includes(e.key)){flash(bC);pressC();}
+  else if(e.key==='m'||e.key==='M'){muted=!muted;say(muted?'🔇 음소거':'🔊 소리 켜짐');}
+});
+
+/* ===================== MAIN LOOP ===================== */
+let last=0;
+function loop(ts){
+  const dt=last?ts-last:16;last=ts;state.t+=dt;
+  if(state.mode!==MODE.VISIT&&state.mode!==MODE.GUT)
+    state.jeongseong=Math.max(0,state.jeongseong-dt*0.0006);
+  if(state.mode===MODE.GUT)gutTick(dt);
+  if(state.mode===MODE.VISIT)visitTick(dt);
+  capEl.style.display = state.mode===MODE.FORTUNE ? 'none' : 'flex';   // 사주 화면엔 글상자 없음
+  render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
