@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pocket Life</title>
+<style>
+  :root {
+    --navy:  #283860;
+    --blue:  #3b78e0;
+    --red:   #e03b3b;
+    --yellow:#ffcb05;
+    --paper: #fffdf6;
+    --cream: #fff3d6;
+    --ink:   #33304a;
+    --muted: #8480a0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; min-height: 100%;
+    background: linear-gradient(#79c6ef, #a9e0b0);
+    color: var(--ink);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px; user-select: none;
+  }
+  .app { width: 672px; max-width: 100%; }
+
+  .brand {
+    font-size: 30px; font-weight: 900; font-style: italic; letter-spacing: 2px;
+    color: var(--yellow);
+    text-shadow: 2px 2px 0 var(--navy), -2px 2px 0 var(--navy), 2px -2px 0 var(--navy),
+                 -2px -2px 0 var(--navy), 0 4px 0 #1b2746;
+    margin: 0 0 0 4px; line-height: 1;
+  }
+  .tagline { font-size: 12px; color: var(--navy); font-weight: bold; letter-spacing: 1px; margin: 4px 0 12px 6px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; padding-left: 6px; }
+  .tab {
+    font-family: inherit; font-weight: bold; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+    color: #fff; background: var(--blue); border: 3px solid var(--navy); border-bottom: none;
+    border-radius: 11px 11px 0 0; padding: 8px 16px 11px; cursor: pointer; position: relative; top: 3px;
+  }
+  .tab:hover { filter: brightness(1.06); }
+  .tab.active { background: #fff; color: var(--navy); top: 0; padding-bottom: 14px; z-index: 2; }
+
+  /* Screen */
+  .screen { background: var(--paper); border: 4px solid var(--navy); border-radius: 0 12px 12px 12px; overflow: hidden; box-shadow: 0 12px 30px #0006; }
+  .view.hidden { display: none; }
+
+  #stage { position: relative; line-height: 0; }
+  canvas { display: block; image-rendering: pixelated; width: 640px; height: 576px; }
+  .wlogo { position: absolute; object-fit: cover; object-position: center; display: none; pointer-events: none; image-rendering: auto; z-index: 1; }
+  #prompt {
+    position: absolute; transform: translate(-50%, -100%); z-index: 5;
+    background: var(--navy); color: #fff; border: 2px solid var(--yellow);
+    padding: 2px 7px; font: bold 11px "Trebuchet MS", sans-serif; letter-spacing: 1px;
+    white-space: nowrap; pointer-events: none; display: none; border-radius: 4px;
+  }
+  .hud { font-size: 12px; color: var(--navy); background: var(--cream); padding: 8px 12px; text-align: center; border-top: 3px solid var(--navy); letter-spacing: .5px; }
+  .hud b { background: var(--navy); color: #fff; padding: 1px 6px; border-radius: 4px; }
+
+  /* Report card */
+  #view-report { padding: 18px 22px; max-height: 576px; overflow-y: auto; }
+  .rc-head { text-align: center; border-bottom: 3px solid var(--navy); padding-bottom: 10px; margin-bottom: 6px; }
+  .rc-head .title { font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: var(--navy); }
+  .rc-head .date { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .rc-overall { display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--cream); border: 3px solid var(--navy); border-radius: 10px; padding: 12px; margin: 14px 0 16px; }
+  .rc-overall .big { font-size: 46px; font-weight: 900; line-height: 1; }
+  .rc-overall .lbl { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); font-weight: bold; }
+  .rc-overall .gpa { font-size: 12px; color: var(--muted); }
+  table.rc { width: 100%; border-collapse: collapse; }
+  table.rc th { text-align: left; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 4px 6px; }
+  table.rc td { padding: 9px 6px; border-top: 2px solid #ece6d0; vertical-align: top; }
+  table.rc .cat { font-weight: bold; }
+  table.rc .cnt { font-size: 10px; color: var(--muted); font-weight: normal; }
+  table.rc .grade { font-size: 26px; font-weight: 900; text-align: center; width: 50px; }
+  table.rc .cmt { font-size: 12px; color: #5a5570; }
+  table.rc .cmt.none { color: var(--muted); font-style: italic; }
+  tr.sechead td { background: #eaf1ff; color: var(--navy); font-weight: 900; letter-spacing: .5px; border-top: 2px solid var(--navy); }
+  tr.sub .cat { padding-left: 20px; font-weight: normal; }
+  /* grade colors */
+  .g-A { color: #2f9e44; } .g-B { color: var(--blue); } .g-C { color: #d6a400; }
+  .g-D { color: #e8590c; } .g-F { color: var(--red); } .g-none { color: var(--muted); }
+
+  /* Category modal */
+  .overlay { position: fixed; inset: 0; background: #28386099; display: none; align-items: center; justify-content: center; z-index: 10; }
+  .overlay.open { display: flex; }
+  .card { background: var(--paper); color: var(--ink); width: min(520px, 92vw); max-height: 88vh; overflow-y: auto; border: 4px solid var(--navy); border-radius: 12px; box-shadow: 0 14px 40px #000a; padding: 16px 18px; }
+  .card h2 { margin: 0 0 4px; font-size: 19px; display: flex; align-items: center; gap: 8px; color: var(--navy); }
+  .card .sub { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+  .sec-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 4px 0 6px; font-weight: bold; }
+  .log { list-style: none; margin: 0 0 10px; padding: 0; max-height: 130px; overflow-y: auto; }
+  .log li { background: #f4f7ff; border: 2px solid #cdd8ef; border-radius: 6px; padding: 5px 9px; margin-bottom: 5px; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; }
+  .log .when { color: var(--muted); font-size: 10px; white-space: nowrap; }
+  .empty { color: var(--muted); font-style: italic; font-size: 13px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; }
+  .grade-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  input[type=text], input[type=password], textarea, select { font-family: inherit; font-size: 13px; border: 2px solid #b9c4e0; border-radius: 6px; padding: 7px 9px; background: #fff; color: var(--ink); width: 100%; }
+  .grade-row select { width: 108px; flex: none; font-weight: bold; }
+  textarea { resize: vertical; min-height: 44px; }
+  button { font-family: inherit; font-size: 13px; font-weight: bold; letter-spacing: .5px; border: 2px solid var(--navy); border-radius: 6px; padding: 8px 12px; cursor: pointer; background: var(--blue); color: #fff; white-space: nowrap; }
+  button.ghost { background: #e7ecf5; color: var(--navy); }
+  button:hover { filter: brightness(1.06); }
+  .actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .saved-tip { font-size: 11px; color: #2f9e44; opacity: 0; transition: opacity .2s; letter-spacing: .5px; font-weight: bold; }
+  .saved-tip.show { opacity: 1; }
+  hr.div { border: none; border-top: 2px dashed #d8c7a4; margin: 12px 0; }
+
+  /* Finances account book */
+  #finChart { width: 140px; height: 140px; image-rendering: auto; flex: none; }
+  .fin-stats { display: flex; gap: 8px; margin-bottom: 10px; }
+  .fin-stat { flex: 1; background: #f4f7ff; border: 2px solid #cdd8ef; border-radius: 8px; padding: 8px; text-align: center; }
+  .fin-stat .v { font-size: 18px; font-weight: 900; }
+  .fin-stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px; }
+  .v.pos, .inc { color: #2f9e44; } .v.neg, .exp { color: var(--red); }
+  .fin-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fin-form input[type=text] { width: auto; } .fin-form select { width: auto; }
+  .fin-form #finNote { flex: 1; min-width: 120px; }
+  .fin-graph { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
+  .fin-legend { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 12px; }
+  .fin-legend li { margin: 3px 0; }
+  .fin-legend .none { color: var(--muted); font-style: italic; }
+  .fin-legend .pct { color: var(--muted); font-size: 11px; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; border: 1px solid #00000022; }
+  .fin-sug { list-style: none; margin: 0; padding: 10px 12px; background: var(--cream); border: 2px solid #e3d2a0; border-radius: 8px; font-size: 12px; }
+  .fin-sug li { margin: 4px 0; line-height: 1.35; }
+  .log .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 0 0 6px; border-radius: 0; }
+
+  /* Resume preview */
+  .res-preview { background: #fff; border: 2px solid #cdd8ef; border-radius: 8px; padding: 14px 16px; max-height: 220px; overflow-y: auto; margin-bottom: 6px; }
+  .res-name { font-size: 18px; font-weight: 900; color: var(--navy); }
+  .res-contact { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .res-h { font-weight: bold; color: var(--navy); border-bottom: 2px solid var(--navy); margin: 8px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .res-preview ul { margin: 4px 0; padding-left: 18px; }
+  .res-preview li { font-size: 12px; margin: 3px 0; }
+  .res-preview .muted { color: var(--muted); font-style: italic; }
+
+  /* Per-object form widgets */
+  .kpi { background: var(--cream); border: 2px solid #e3d2a0; border-radius: 6px; padding: 7px 11px; font-size: 13px; margin: 8px 0; }
+  .moods { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mood { font-size: 20px; line-height: 1; background: #f4f7ff; border: 2px solid #cdd8ef; border-radius: 8px; padding: 5px 8px; cursor: pointer; }
+  .mood.sel { background: var(--yellow); border-color: var(--navy); }
+  .glasses { display: flex; gap: 6px; flex-wrap: wrap; }
+  .glass { font-size: 22px; line-height: 1; background: #fff; border: 2px solid #cdd8ef; border-radius: 8px; padding: 4px 7px; cursor: pointer; filter: grayscale(1); opacity: .45; }
+  .glass.full { filter: none; opacity: 1; border-color: var(--blue); background: #eaf3ff; }
+
+  /* Logs + Customize tabs */
+  #view-logs, #view-customize { padding: 18px 22px; max-height: 576px; overflow-y: auto; }
+  .log-sec { margin-bottom: 14px; }
+  .log-h { font-weight: 900; color: var(--navy); border-bottom: 2px solid var(--navy); padding-bottom: 4px; margin-bottom: 6px; font-size: 14px; }
+  .log-empty { color: var(--muted); font-style: italic; font-size: 13px; }
+  .themes { display: flex; gap: 10px; margin-bottom: 16px; }
+  .theme-card { flex: 1; background: #f4f7ff; border: 3px solid #cdd8ef; border-radius: 10px; padding: 8px; cursor: pointer; color: var(--navy); font-weight: bold; text-transform: none; letter-spacing: 0; }
+  .theme-card.sel { border-color: var(--navy); background: #fff; }
+  .theme-card small { color: var(--muted); font-weight: normal; }
+  .sw-room { height: 46px; border-radius: 6px; margin-bottom: 6px; border: 2px solid #0002; }
+  .sw-room.cozy { background: linear-gradient(#bfe0f0 45%, #e7c48b 45%); }
+  .sw-room.hanwha { background: linear-gradient(#f5934e 45%, #ecc795 45%); }
+  .cz-row { display: flex; gap: 16px; align-items: flex-start; }
+  #avPrev { width: 120px; height: 150px; image-rendering: pixelated; border: 3px solid var(--navy); border-radius: 8px; flex: none; background: #fff; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sw-c { width: 26px; height: 26px; border-radius: 6px; border: 3px solid #cdd8ef; cursor: pointer; padding: 0; }
+  .sw-c.sel { border-color: var(--navy); }
+  .hbtn { font-family: inherit; font-size: 12px; font-weight: bold; background: #f4f7ff; color: var(--navy); border: 2px solid #cdd8ef; border-radius: 7px; padding: 5px 9px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .hbtn.sel { border-color: var(--navy); background: #fff; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="brand">Pocket Life</div>
+    <div class="tagline">▸ a daily report-card sim</div>
+    <div class="tabs">
+      <button class="tab active" data-tab="room">🏡 Room</button>
+      <button class="tab" data-tab="report">📋 Report</button>
+      <button class="tab" data-tab="logs">📜 Logs</button>
+      <button class="tab" data-tab="customize">🎨 Customize</button>
+    </div>
+    <div class="screen">
+      <div id="view-room" class="view">
+        <div id="stage">
+          <canvas id="game" width="320" height="288"></canvas>
+          <img id="logoScreen" class="wlogo" src="hanwha-logo.jpg" alt="Hanwha">
+          <img id="logoBanner" class="wlogo" src="hanwha-logo.jpg" alt="Hanwha">
+          <div id="prompt"></div>
+        </div>
+        <div class="hud">Move <b>WASD</b> / <b>Arrows</b> &nbsp; Interact <b>E</b> / <b>Space</b> &nbsp; 📬 mailbox → report</div>
+      </div>
+      <div id="view-report" class="view hidden"></div>
+      <div id="view-logs" class="view hidden"></div>
+      <div id="view-customize" class="view hidden"></div>
+    </div>
+  </div>
+
+  <!-- Category modal -->
+  <div class="overlay" id="catOverlay">
+    <div class="card">
+      <h2 id="catTitle"></h2>
+      <p class="sub" id="catSub"></p>
+      <div id="catBody"></div>
+      <hr class="div" />
+      <div class="sec-label">Grade — feeds the report card</div>
+      <div class="grade-row">
+        <select id="catGrade"></select>
+        <span style="font-size:12px;color:var(--muted);">Pick your grade</span>
+      </div>
+      <textarea id="catComments" placeholder="Your comments / how it's going…"></textarea>
+      <div class="actions">
+        <span class="saved-tip" id="catSaved">✓ Saved</span>
+        <span style="flex:1"></span>
+        <button id="catAI">✨ AI</button>
+        <button id="catSave">Save Grade</button>
+        <button class="ghost" id="catClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finances account book -->
+  <div class="overlay" id="finOverlay">
+    <div class="card" style="width:min(560px,94vw)">
+      <h2>🐷 Finances — Account Book</h2>
+      <p class="sub">Track income &amp; spending, then see where to cut back.</p>
+
+      <div class="fin-stats">
+        <div class="fin-stat"><div class="v inc" id="finIncome">$0</div><div class="k">Income</div></div>
+        <div class="fin-stat"><div class="v exp" id="finSpend">$0</div><div class="k">Spending</div></div>
+        <div class="fin-stat"><div class="v pos" id="finBal">$0</div><div class="k">Balance</div></div>
+      </div>
+
+      <div class="sec-label">Add a transaction</div>
+      <div class="fin-form">
+        <select id="finType"><option value="expense">Expense</option><option value="income">Income</option></select>
+        <input type="text" id="finAmt" inputmode="decimal" placeholder="Amount" style="width:90px" />
+        <select id="finCat"></select>
+        <input type="text" id="finNote" placeholder="Note (optional)" />
+        <button id="finAdd">Add</button>
+      </div>
+
+      <hr class="div" />
+      <div class="sec-label">Spending by category</div>
+      <div class="fin-graph">
+        <canvas id="finChart" width="140" height="140"></canvas>
+        <ul class="fin-legend" id="finLegend"></ul>
+      </div>
+
+      <div class="sec-label">Suggestions</div>
+      <ul class="fin-sug" id="finSug"></ul>
+
+      <hr class="div" />
+      <div class="sec-label">Recent transactions</div>
+      <ul class="log" id="finList"></ul>
+
+      <hr class="div" />
+      <div class="sec-label">Finances grade — feeds the report card</div>
+      <div class="grade-row">
+        <select id="finGrade"></select>
+        <span style="font-size:12px;color:var(--muted);">Pick your grade</span>
+      </div>
+      <textarea id="finComments" placeholder="Your comments…"></textarea>
+      <div class="actions">
+        <span class="saved-tip" id="finSaved">✓ Saved</span>
+        <span style="flex:1"></span>
+        <button id="finAI">✨ AI</button>
+        <button id="finSave">Save Grade</button>
+        <button class="ghost" id="finClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resume printer -->
+  <div class="overlay" id="resOverlay">
+    <div class="card" style="width:min(560px,94vw)">
+      <h2>🖨️ Resume Printer</h2>
+      <p class="sub">Builds a resume from your Career log, then prints it.</p>
+      <div class="sec-label">Your details</div>
+      <div class="row" style="margin-bottom:10px">
+        <input type="text" id="resName" placeholder="Your name" />
+        <input type="text" id="resContact" placeholder="email · phone · location" />
+      </div>
+      <div class="sec-label">Preview</div>
+      <div id="resPreview" class="res-preview"></div>
+      <div class="actions">
+        <span style="flex:1"></span>
+        <button id="resPrint">🖨️ Print</button>
+        <button class="ghost" id="resClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   POCKET LIFE — Pokémon-style living-room report card
+   Internal resolution 160x144, scaled x4 on screen.
+   ============================================================ */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const W = 160, H = 144, SCALE = 4, WS = 2;   // world units 160x144; buffer is WS× (thin 1px outlines)
+
+const CATEGORIES = {
+  fitness:  { name: 'Health & Fitness', icon: '🏋️', placeholder: 'e.g., 30 min run, 3×10 squats' },
+  water:    { name: 'Water Intake',     icon: '💧', placeholder: 'e.g., 2 glasses' },
+  meals:    { name: 'Meal Intake',      icon: '🍳', placeholder: 'e.g., oatmeal & eggs' },
+  career:   { name: 'Career',           icon: '💻', placeholder: 'e.g., shipped feature X, applied to Y' },
+  mental:   { name: 'Mental Health',    icon: '📔', placeholder: 'today I feel…' },
+  finances: { name: 'Finances',         icon: '🐷', placeholder: 'e.g., saved $20, dividend $5' },
+  reading:  { name: 'Reading',          icon: '📚', placeholder: 'e.g., read 20 pages of …' },
+};
+// Report-card grouping: Health bundles fitness + water + meals.
+const SECTIONS = [
+  { name: 'Health',        icon: '❤️', cats: ['fitness','water','meals'] },
+  { name: 'Career',        icon: '💻', cats: ['career'] },
+  { name: 'Mental Health', icon: '📔', cats: ['mental'] },
+  { name: 'Finances',      icon: '🐷', cats: ['finances'] },
+  { name: 'Reading',       icon: '📚', cats: ['reading'] },
+];
+const GRADES = ['—','A+','A','A-','B+','B','B-','C+','C','C-','D','F'];
+const POINTS = {'A+':4.0,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D':1.0,'F':0.0};
+
+/* ---------- Persistence ---------- */
+const store = {
+  load(k, def){ try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } },
+  save(k, v){ localStorage.setItem(k, JSON.stringify(v)); },
+};
+let entries = store.load('lifecard.entries', {});
+for (const k of Object.keys(CATEGORIES)) if (!Array.isArray(entries[k])) entries[k] = [];
+let report = store.load('lifecard.report', {});
+let finances = store.load('lifecard.finances', []);  // account-book transactions
+let waterCount = store.load('lifecard.water', 0);
+let fitCats = store.load('lifecard.fitCats', ['Cardio','Weights','Other']);
+let theme = store.load('lifecard.theme', 'cozy');
+let avatar = store.load('lifecard.avatar', { shirt:'#d24b4b', hair:'#7a4a2a', hairStyle:'ponytail' });
+if (!avatar.hairStyle) avatar.hairStyle = 'ponytail';
+let aiKey = store.load('lifecard.aikey', '');
+const iconImg = new Image(); let iconReady = false;
+iconImg.onload = () => { iconReady = true; };
+iconImg.src = '272210.KS-e7eafd81.png';
+let aiProvider = store.load('lifecard.aiprovider', 'auto');
+const HANWHA_ORANGE = '#f37321';
+const THEMES = {
+  cozy:   { wall:'#bfe0f0', wallHi:'#d2ecf7', wallPat:'#a6cfe6', trim:'#7fb0cf', base:'#8a5a38', floor:'#f1ddb6', seam:'#dcc08c' },
+  hanwha: { wall:'#f5934e', wallHi:'#ffb877', wallPat:'#e07a2e', trim:'#c2641f', base:'#7a4516', floor:'#c3b091', seam:'#a8916e' },  // khaki floor
+};
+// Hair is a set of cells (relative to the avatar) drawn with the hair colour; draw(plot,dir).
+const HAIRSTYLES = {
+  ponytail: { name:'Ponytail', draw:(H,dir)=>{ H(1,0,8,2); H(1,1,1,5); H(8,1,1,5); const tx=dir==='right'?-2:10; H(tx,2,2,7); } },
+  short:    { name:'Short',    draw:(H)=>{ H(1,0,8,3); H(1,3,1,1); H(8,3,1,1); } },
+  long:     { name:'Long',     draw:(H)=>{ H(1,0,8,3); H(0,2,2,10); H(8,2,2,10); } },
+  buzz:     { name:'Buzz',     draw:(H)=>{ H(1,0,8,2); } },
+  bun:      { name:'Top Bun',  draw:(H)=>{ H(1,0,8,3); H(1,3,1,1); H(8,3,1,1); H(4,-3,3,3); } },
+  pigtails: { name:'Pigtails', draw:(H)=>{ H(1,0,8,2); H(-1,2,2,6); H(9,2,2,6); } },
+  bald:     { name:'Bald',     draw:(H)=>{ H(3,1,1,1); } },
+  mohawk:   { name:'Mohawk',   draw:(H)=>{ H(4,-3,2,6); } },
+  afro:     { name:'Afro',     draw:(H)=>{ H(0,-2,10,5); H(-1,0,2,5); H(9,0,2,5); H(1,0,8,3); } },
+  spiky:    { name:'Spiky',    draw:(H)=>{ H(1,0,8,2); H(1,-2,1,2); H(3,-3,1,3); H(5,-2,1,2); H(7,-3,1,3); } },
+  antenna:  { name:'Antenna',  draw:(H)=>{ H(1,0,8,2); H(4,-4,1,4); H(4,-4,2,1); } },
+};
+
+/* ---------- World objects (160x144 coords) ---------- */
+const objects = [
+  { id:'fridge',   cat:'meals',    box:[18,16,16,28],  draw:drawFridge },
+  { id:'water',    cat:'water',    box:[36,16,12,28],  draw:drawWater },
+  { id:'desk',     cat:'career',   box:[100,16,38,16], draw:drawDesk },
+  { id:'printer',  cat:'resume',   box:[86,18,12,14],  draw:drawPrinter },
+  { id:'bookshelf',cat:'reading',  box:[50,14,30,20],  draw:drawBookshelf },
+  { id:'couch',    cat:null,       box:[62,58,40,16],  draw:drawCouch },
+  { id:'table',    cat:'mental',   box:[66,82,30,18],  draw:drawTable },
+  { id:'dumbbell', cat:'fitness',  box:[20,82,22,8],   draw:drawDumbbell },
+  { id:'piggy',    cat:'finances', box:[110,84,16,14], draw:drawPiggy },
+  { id:'mailbox',  cat:'report',   box:[122,106,12,24],draw:drawMailbox },
+];
+for (const o of objects){ o.ix = o.box[0]+o.box[2]/2; o.iy = o.box[1]+o.box[3]/2; }
+
+/* ---------- Walls / collisions ---------- */
+const WT = 14, DOOR_X1 = 66, DOOR_X2 = 94;
+const walls = [
+  [0,0,W,WT], [0,0,WT,H], [W-WT,0,WT,H],
+  [0,H-WT,DOOR_X1,WT], [DOOR_X2,H-WT,W-DOOR_X2,WT],
+  [DOOR_X1,H-WT,DOOR_X2-DOOR_X1,WT],   // door is solid — you can't leave the room
+];
+const solids = objects.filter(o => ['fridge','water','desk','printer','couch','table','bookshelf'].includes(o.id)).map(o => o.box);
+const blockers = [...walls, ...solids];
+
+/* ---------- Player & state ---------- */
+const player = { x: 80, y: 112, w: 10, h: 14, speed: 0.85, dir: 'up', moving: false, frame: 0, t: 0 };
+let paused = false, activeTab = 'room';
+const keys = {};
+const INTERACT_RANGE = 32;
+
+/* ---------- Input (E/Space never leak into text fields) ---------- */
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { closeModal(); return; }
+  const tag = (e.target.tagName || '').toLowerCase();
+  const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+  if (typing || paused || activeTab !== 'room') return;
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  keys[k] = true;
+  if (k === 'e' || k === ' ') { e.preventDefault(); tryInteract(); }
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+function rectsOverlap(ax,ay,aw,ah,b){ return ax<b[0]+b[2] && ax+aw>b[0] && ay<b[1]+b[3] && ay+ah>b[1]; }
+function hitsAny(x,y,w,h){ for (const b of blockers) if (rectsOverlap(x,y,w,h,b)) return true; return false; }
+function collides(x,y){ return hitsAny(x,y,player.w,player.h); }
+
+/* ---------- Pet beagle (wanders on its own) ---------- */
+const dog = { x: 40, y: 112, w: 13, h: 9, dir: 'left', vx: 0, vy: 0, t: 0, frame: 0, ft: 0, sitting: 0 };
+let hearts = [];
+function petDog(){ dog.sitting = 150; dog.vx = 0; dog.vy = 0; spawnHearts(4); }
+function spawnHearts(n){ n = n || 3; const hx = dog.x + dog.w/2;
+  for (let i=0;i<n;i++) hearts.push({ x: hx + (Math.random()*8-4), y: dog.y-2, vy: 0.25+Math.random()*0.12, life: 55, max: 55 }); }
+function updateHearts(){ for (const h of hearts){ h.y -= h.vy; h.life--; } hearts = hearts.filter(h=>h.life>0); }
+function drawHeart(x,y,c){ px(x+1,y,1,1,c); px(x+3,y,1,1,c); px(x,y+1,5,1,c); px(x+1,y+2,3,1,c); px(x+2,y+3,1,1,c); }
+function drawHearts(){ for (const h of hearts){ const a=Math.max(0,h.life/h.max); drawHeart(h.x|0, h.y|0, `rgba(224,59,90,${a.toFixed(2)})`); } }
+function updateDog(){
+  if (paused || activeTab !== 'room') return;
+  dog.ft++; if (dog.ft % 9 === 0) dog.frame ^= 1;
+  if (dog.sitting > 0){ dog.sitting--; if (dog.sitting % 22 === 0) spawnHearts(1); return; }  // being pet
+  if (--dog.t <= 0){
+    dog.t = 50 + Math.floor(Math.random()*100);
+    if (Math.random() < 0.28){ dog.vx = 0; dog.vy = 0; }
+    else { const ang = Math.random()*Math.PI*2, sp = 0.4; dog.vx = Math.cos(ang)*sp; dog.vy = Math.sin(ang)*sp; }
+  }
+  if (dog.vx || dog.vy){
+    const nx = dog.x + dog.vx;
+    if (!hitsAny(nx, dog.y, dog.w, dog.h)) dog.x = nx; else { dog.vx = -dog.vx; dog.t = Math.min(dog.t, 12); }
+    const ny = dog.y + dog.vy;
+    if (!hitsAny(dog.x, ny, dog.w, dog.h)) dog.y = ny; else { dog.vy = -dog.vy; dog.t = Math.min(dog.t, 12); }
+    if (dog.vx < -0.02) dog.dir = 'left'; else if (dog.vx > 0.02) dog.dir = 'right';
+  }
+}
+
+function update(){
+  if (paused || activeTab !== 'room'){ player.moving = false; return; }
+  let dx=0, dy=0;
+  if (keys['arrowleft']||keys['a']) { dx-=1; player.dir='left'; }
+  if (keys['arrowright']||keys['d']){ dx+=1; player.dir='right'; }
+  if (keys['arrowup']||keys['w'])   { dy-=1; player.dir='up'; }
+  if (keys['arrowdown']||keys['s']) { dy+=1; player.dir='down'; }
+  player.moving = (dx||dy) !== 0;
+  if (dx&&dy){ dx*=0.7071; dy*=0.7071; }
+  const nx = player.x + dx*player.speed; if (!collides(nx, player.y)) player.x = nx;
+  const ny = player.y + dy*player.speed; if (!collides(player.x, ny)) player.y = ny;
+  if (player.moving){ player.t++; if (player.t%8===0) player.frame ^= 1; } else player.frame = 0;
+}
+
+function nearestInteractable(){
+  const px = player.x + player.w/2, py = player.y + player.h/2;
+  let best=null, bd=INTERACT_RANGE;
+  for (const o of objects){ if (!o.cat) continue; const d=Math.hypot(px-o.ix, py-o.iy); if (d<bd){ bd=d; best=o; } }
+  return best;
+}
+function nearestThing(){
+  const px = player.x + player.w/2, py = player.y + player.h/2;
+  let best = null, bd = INTERACT_RANGE;
+  for (const o of objects){ if (!o.cat) continue; const d = Math.hypot(px-o.ix, py-o.iy); if (d < bd){ bd = d; best = { type:'obj', o }; } }
+  const dd = Math.hypot(px-(dog.x+dog.w/2), py-(dog.y+dog.h/2));
+  if (dd < bd){ best = { type:'dog' }; }
+  return best;
+}
+function tryInteract(){
+  const t = nearestThing(); if (!t) return;
+  if (t.type === 'dog'){ petDog(); return; }
+  const o = t.o;
+  if (o.cat === 'report') setTab('report');
+  else if (o.cat === 'finances') openFinances();
+  else if (o.cat === 'resume') openPrinter();
+  else openCategory(o.cat);
+}
+
+/* ============================================================
+   DRAWING (colorful chunky pixels)
+   ============================================================ */
+function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x*WS),Math.round(y*WS),Math.max(1,Math.round(w*WS)),Math.max(1,Math.round(h*WS))); }
+function outline(x,y,w,h,c){ ctx.fillStyle=c||'#161616';   // thin 1-buffer-px outline (half a world pixel)
+  const X=Math.round(x*WS), Y=Math.round(y*WS), Wd=Math.round(w*WS), Ht=Math.round(h*WS);
+  ctx.fillRect(X,Y,Wd,1); ctx.fillRect(X,Y+Ht-1,Wd,1); ctx.fillRect(X,Y,1,Ht); ctx.fillRect(X+Wd-1,Y,1,Ht); }
+function obj(id){ return objects.find(o=>o.id===id).box; }
+
+function drawRoom(){
+  const T = THEMES[theme] || THEMES.cozy;
+  px(0,0,W,H,T.floor);                                     // floor
+  for (let y=20;y<H-WT;y+=12) px(WT,y,W-2*WT,1,T.seam);    // plank seams
+  for (let y=20;y<H-WT;y+=24) for (let x=34;x<W-WT;x+=28) px(x,y,1,12,T.seam);
+  px(54,54,56,52,'#2f8a4a'); px(57,57,50,46,'#5cb86a'); px(66,80,32,22,'#3a9e54');   // green carpet (centered)
+  // back wall
+  px(0,0,W,WT,T.wall); px(0,0,W,9,T.wallHi);
+  for (let x=3;x<W;x+=8) px(x,2,2,5,T.wallPat);
+  px(0,WT-2,W,2,T.base);
+  // side + bottom walls
+  px(0,0,WT,H,T.wall); px(0,0,2,H,T.trim); px(WT-2,0,2,H,T.trim);
+  px(W-WT,0,WT,H,T.wall); px(W-2,0,2,H,T.trim); px(W-WT,0,2,H,T.trim);
+  px(0,H-WT,DOOR_X1,WT,T.wall); px(DOOR_X2,H-WT,W-DOOR_X2,WT,T.wall);
+  px(0,H-2,W,2,T.trim); px(0,H-WT,DOOR_X1,2,T.trim); px(DOOR_X2,H-WT,W-DOOR_X2,2,T.trim);
+  // door
+  px(DOOR_X1,H-WT,DOOR_X2-DOOR_X1,WT,'#6e4426');
+  px(DOOR_X1+2,H-WT+2,DOOR_X2-DOOR_X1-4,WT-2,'#8a5a34');
+  px(DOOR_X1+4,H-WT+4,DOOR_X2-DOOR_X1-8,WT-4,'#a9743f');
+  px(DOOR_X2-5,H-7,2,3,'#ffcb05');
+  if (theme==='hanwha') drawHanwhaLogo();
+}
+function drawHanwhaMark(cx, cy, R, color){   // cx,cy,R in BUFFER pixels — detailed pixelated 3-petal mark
+  ctx.fillStyle = color;
+  const phase = -Math.PI/2;                  // one petal points up
+  for (let gy=-R; gy<=R; gy++) for (let gx=-R; gx<=R; gx++){
+    const rho = Math.hypot(gx,gy)/R; if (rho>1) continue;
+    const val = Math.cos(3*(Math.atan2(gy,gx) - phase));   // 3-petal rose
+    if (val>0 && rho <= Math.pow(val,0.6)) ctx.fillRect(cx+gx, cy+gy, 1, 1);
+  }
+}
+function drawHanwhaLogo(){   // plaque; the crisp logo image sits on top as a DOM overlay (#logoBanner)
+  const x=46, y=1, w=68, h=12;
+  px(x,y,w,h,'#ffffff'); outline(x,y,w,h,'#c2641f');
+  drawHanwhaMark((x+10)*WS,(y+6)*WS,9,HANWHA_ORANGE);               // fallback if image missing
+  px(x+20,y+3,12,1,HANWHA_ORANGE); px(x+20,y+5,12,1,HANWHA_ORANGE); px(x+20,y+7,9,1,HANWHA_ORANGE);
+}
+
+function drawFridge(){ const [x,y,w,h]=obj('fridge');
+  px(x,y,w,h,'#eef3f6'); outline(x,y,w,h,'#161616');
+  px(x+1,y+1,w-2,2,'#ffffff'); px(x,y+Math.floor(h/2),w,1,'#9fb0bc');
+  px(x+w-3,y+3,1,6,'#9fb0bc'); px(x+w-3,y+Math.floor(h/2)+3,1,7,'#9fb0bc'); }
+function drawWater(){ const [x,y,w,h]=obj('water');   // corporate hot/cold cooler
+  px(x+1,y+9,w-2,h-9,'#eef3f6'); outline(x+1,y+9,w-2,h-9,'#161616');  // body
+  px(x+2,y+10,w-4,2,'#ffffff');
+  px(x+3,y+7,w-6,2,'#cfd9e0');                                        // neck collar
+  px(x+2,y,w-4,7,'#7fb8e8'); outline(x+2,y,w-4,7,'#161616');          // inverted bottle
+  px(x+3,y+1,2,3,'#bfe6f7'); px(x+Math.floor(w/2)-1,y-1,2,2,'#cfd9e0');
+  px(x+2,y+16,2,2,'#e03b3b'); px(x+2,y+15,2,1,'#a8322b');             // HOT tap (red)
+  px(x+w-4,y+16,2,2,'#3b78e0'); px(x+w-4,y+15,2,1,'#2a5bb0');         // COLD tap (blue)
+  px(x+2,y+h-4,w-4,2,'#9fb0bc'); px(x+3,y+h-3,w-6,1,'#7a8a96'); }     // drip tray
+function drawPrinter(){ const [x,y,w,h]=obj('printer');
+  px(x+1,y,w-2,3,'#ffffff'); px(x+2,y+1,w-4,1,'#cdd8ef');             // paper out
+  px(x,y+3,w,h-3,'#cfd4da'); outline(x,y+3,w,h-3,'#161616');          // body
+  px(x+1,y+4,w-2,2,'#b9bfc6');                                        // top lid
+  px(x+2,y+8,4,2,'#39c0e6');                                          // little display
+  px(x+w-3,y+8,1,1,'#2f9e44'); px(x+w-5,y+8,1,1,'#e0a800');           // buttons
+  px(x+2,y+h-3,w-4,1,'#8a929c'); }                                    // out tray
+function drawDesk(){ const [x,y,w,h]=obj('desk');
+  px(x,y+h-6,w,6,'#a9743f'); outline(x,y+h-6,w,6,'#161616');
+  px(x+2,y+h-1,2,3,'#6e4426'); px(x+w-4,y+h-1,2,3,'#6e4426');
+  const mx=x+Math.floor(w/2)-8;
+  px(mx,y-2,16,12,'#2b2b35'); outline(mx,y-2,16,12,'#161616');      // monitor frame
+  px(mx+1,y-1,14,8,'#ffffff');                                      // screen (logo overlay #logoScreen sits on top)
+  drawHanwhaMark((mx+8)*WS,(y+3)*WS,6,HANWHA_ORANGE);              // fallback if image missing
+  px(mx+6,y+10,4,2,'#2b2b35'); px(x+Math.floor(w/2)-8,y+h-4,16,2,'#dfe6ea'); }   // stand + keyboard
+function drawBookshelf(){ const [x,y,w,h]=obj('bookshelf');
+  px(x,y,w,h,'#6e4426'); outline(x,y,w,h,'#161616'); px(x+2,y+2,w-4,h-4,'#8a5a34');
+  const cols=['#d24b4b','#3b78e0','#3aa84a','#f0b429','#8a4ad2','#e07b39'];
+  let ci=0;
+  for (const sy of [y+3,y+11]){
+    px(x+2,sy+7,w-4,1,'#5a3a1e');
+    let cx=x+3;
+    while (cx < x+w-3){
+      const bw = 2 + (ci%2), bh = 6 - (ci%3===0?1:0);
+      px(cx, sy+7-bh, bw, bh, cols[ci%cols.length]);
+      cx += bw+1; ci++;
+    }
+  } }
+function drawCouch(){ const [x,y,w,h]=obj('couch');
+  px(x,y,w,h,'#3b6fd0'); outline(x,y,w,h,'#284e96');
+  px(x+2,y+4,w-4,h-6,'#5a8ce8');
+  px(x+3,y+5,Math.floor((w-8)/2)-1,h-8,'#7aa6f0'); px(x+4+Math.floor((w-8)/2),y+5,Math.floor((w-8)/2)-1,h-8,'#7aa6f0');
+  px(x,y,w,3,'#3b6fd0'); }
+function drawTable(){ const [x,y,w,h]=obj('table');
+  px(x+2,y+h-4,3,4,'#6e4426'); px(x+w-5,y+h-4,3,4,'#6e4426');
+  px(x,y,w,h-4,'#a9743f'); outline(x,y,w,h-4,'#161616'); px(x+2,y+2,w-4,h-8,'#c08a4e');
+  const jx=x+Math.floor(w/2)-6;
+  px(jx,y+3,12,8,'#3b78e0'); px(jx+1,y+4,10,6,'#fff7e0'); px(jx+6,y+4,1,6,'#2a5bb0'); }
+function drawDumbbell(){ const [x,y,w,h]=obj('dumbbell');
+  px(x+5,y+3,w-10,2,'#9aa1a8'); px(x+5,y+2,w-10,1,'#161616'); px(x+5,y+5,w-10,1,'#161616');
+  px(x,y,6,h,'#3a3f45'); px(x+1,y+1,4,6,'#52585f'); outline(x,y,6,h,'#161616');
+  px(x+w-6,y,6,h,'#3a3f45'); px(x+w-5,y+1,4,6,'#52585f'); outline(x+w-6,y,6,h,'#161616'); }
+function drawPiggy(){ const [x,y,w,h]=obj('piggy');
+  px(x+1,y+2,w-2,h-4,'#f2a3c4'); outline(x+1,y+2,w-2,h-4,'#161616');
+  px(x+2,y+3,5,3,'#f7c8da');                       // belly highlight
+  px(x+w-4,y+5,3,4,'#e07ba6');                      // snout
+  px(x+w-3,y+6,1,1,'#8a3a60'); px(x+w-4,y+6,1,1,'#8a3a60'); // nostrils
+  px(x+w-6,y+1,3,3,'#e07ba6');                      // ear
+  px(x+w-7,y+4,1,1,'#3a2230');                      // eye
+  px(x+4,y+2,5,1,'#8a3a60');                        // coin slot
+  px(x+1,y+5,2,2,'#e07ba6');                        // tail
+  px(x+2,y+h-2,3,2,'#d98aae'); px(x+w-5,y+h-2,3,2,'#d98aae'); } // legs
+function drawMailbox(){ const [x,y,w,h]=obj('mailbox');
+  px(x+Math.floor(w/2)-1,y+10,2,h-10,'#6e4426');
+  px(x,y,w,12,'#d2433b'); outline(x,y,w,12,'#161616'); px(x,y,w,3,'#e0655a');
+  px(x+w-2,y+2,1,5,'#ffcb05'); px(x+2,y+5,w-4,3,'#a8322b'); }
+
+function drawAvatar(ox,oy,ov){   // ov = override colour (black silhouette passes)
+  const x=player.x+ox, y=player.y+oy, dir=player.dir, frame=player.frame, moving=player.moving;
+  const co = c => ov || c;
+  const skin='#f3c89a', skinSh='#e0a877', hair=avatar.hair, eye='#2b2838';
+  const shirt = theme==='hanwha' ? '#ffffff' : avatar.shirt;
+  px(x+2,y+7,6,4,co(shirt)); px(x+1,y+10,8,3,co(shirt)); px(x+1,y+12,8,1,co('rgba(0,0,0,.28)'));
+  if (theme==='hanwha' && dir!=='up' && !ov && iconReady){           // Hanwha icon on white tee
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(iconImg, Math.round((x+2.5)*WS), Math.round((y+7.5)*WS), Math.round(5*WS), Math.round(5*WS));
+    ctx.imageSmoothingEnabled=false;
+  }
+  px(x+1,y+8,1,3,co(skinSh)); px(x+8,y+8,1,3,co(skinSh));
+  const lo = moving && frame ? 1 : 0;
+  px(x+3,y+13,2,1,co('#3a3a48')); px(x+5,y+13-lo,2,1,co('#3a3a48'));
+  px(x+2,y+2,6,5,co(skin)); px(x+2,y+2,2,2,co(skin));                     // face base
+  const plot=(cx,cy,w,h)=>px(x+cx,y+cy,w,h,co(hair));                     // hairstyle
+  (HAIRSTYLES[avatar.hairStyle]||HAIRSTYLES.ponytail).draw(plot, dir);
+  if (dir==='up')      { px(x+2,y+2,6,5,co(hair)); }
+  else if (dir==='left')  { px(x+3,y+4,1,2,co(eye)); }
+  else if (dir==='right') { px(x+6,y+4,1,2,co(eye)); }
+  else { px(x+3,y+4,1,2,co(eye)); px(x+6,y+4,1,2,co(eye)); px(x+4,y+6,2,1,co('#c4546a')); }
+}
+function drawPlayer(){
+  px(player.x+1,player.y+13,8,2,'rgba(40,40,60,.25)');              // shadow
+  for (const o of [[-0.5,0],[0.5,0],[0,-0.5],[0,0.5]]) drawAvatar(o[0],o[1],'#161616'); // silhouette
+  drawAvatar(0,0,null);
+}
+
+function drawDogR(x,y,frame,moving,sit){
+  const white='#f4efe6', tan='#caa06a', brown='#7a4a2a', dark='#33271f', nose='#241c18', collar='#e03b3b';
+  if (sit){
+    px(x+1,y+4,4,5,white);                                  // rear haunch (seated)
+    px(x+7,y+6,2,3,white); px(x+9,y+6,2,3,white);           // front legs straight
+  } else {
+    const a = moving&&frame?1:0, b = moving&&!frame?1:0;
+    px(x+2,y+7,2,2-a,white); px(x+5,y+7,2,2-b,white); px(x+8,y+7,2,2-a,white); px(x+10,y+7,2,2-b,white); // legs
+  }
+  px(x+1,y+3,11,5,white);                       // body
+  px(x+3,y+3,6,3,brown);                        // saddle (beagle back)
+  px(x,y+1,1,2,white); px(x,y+2,2,2,white);     // tail
+  px(x+9,y+1,4,5,white);                        // head
+  px(x+9,y+1,4,2,tan);                          // tan crown
+  px(x+8,y+1,2,4,brown);                        // floppy ear
+  px(x+11,y+4,2,2,white); px(x+12,y+4,1,1,nose);// snout + nose
+  px(x+10,y+3,1,1,dark);                        // eye
+  px(x+8,y+4,1,3,collar); }                     // collar (dog has no outline)
+function drawDog(){
+  const {x,y,w,h,dir,frame,vx,vy}=dog;
+  px(x+1,y+8,w-2,2,'rgba(40,40,60,.18)');       // shadow
+  const moving = !!(vx||vy), sit = dog.sitting>0;
+  if (dir==='left'){ ctx.save(); ctx.translate((2*x+w)*WS,0); ctx.scale(-1,1); drawDogR(x,y,frame,moving,sit); ctx.restore(); }
+  else drawDogR(x,y,frame,moving,sit);
+}
+
+function render(){
+  if (activeTab !== 'room') return;
+  drawRoom();
+  const list = [
+    ...objects.map(o => ({ y:o.box[1]+o.box[3], fn:o.draw })),
+    { y: player.y+player.h, fn: drawPlayer },
+    { y: dog.y+dog.h, fn: drawDog },
+  ].sort((p,q)=>p.y-q.y);
+  for (const d of list) d.fn();
+  drawHearts();
+}
+
+const promptEl = document.getElementById('prompt');
+function updatePrompt(){
+  if (activeTab !== 'room' || paused){ promptEl.style.display='none'; return; }
+  const t = nearestThing();
+  if (!t || (t.type === 'dog' && dog.sitting > 0)){ promptEl.style.display='none'; return; }  // hide while petting
+  let label, ax, ay;
+  if (t.type === 'dog'){ label = 'PET'; ax = dog.x + dog.w/2; ay = dog.y; }
+  else { const o = t.o; ax = o.ix; ay = o.box[1];
+    label = o.cat==='report' ? 'REPORT CARD' : o.cat==='resume' ? 'PRINT RESUME' : CATEGORIES[o.cat].name.toUpperCase(); }
+  promptEl.textContent = 'E ▸ ' + label;
+  promptEl.style.left = (ax*SCALE) + 'px';
+  promptEl.style.top  = (ay*SCALE - 6) + 'px';
+  promptEl.style.display = 'block';
+}
+
+function loop(){ update(); updateDog(); updateHearts(); render(); updatePrompt(); requestAnimationFrame(loop); }
+loop();
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => setTab(t.dataset.tab));
+function setTab(name){
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  ['room','report','logs','customize'].forEach(v => document.getElementById('view-'+v).classList.toggle('hidden', name!==v));
+  for (const k in keys) keys[k] = false;
+  if (name === 'report') renderReportTab();
+  else if (name === 'logs') renderLogsTab();
+  else if (name === 'customize') renderCustomizeTab();
+}
+
+/* ============================================================
+   CATEGORY MODAL
+   ============================================================ */
+const catOverlay = document.getElementById('catOverlay');
+const catBody = document.getElementById('catBody');
+let activeCat = null;
+const catGradeSel = document.getElementById('catGrade');
+catGradeSel.innerHTML = GRADES.map(g => `<option>${g}</option>`).join('');
+
+const today = () => new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'});
+const saveEntries = () => store.save('lifecard.entries', entries);
+const rid = () => Math.random().toString(36).slice(2,9);
+function listHTML(arr, fmt){
+  if (!arr || !arr.length) return '<div class="empty">No entries yet.</div>';
+  let s = '';
+  for (let i=arr.length-1;i>=0;i--) s += `<li><span>${fmt(arr[i])}</span><span class="when">${arr[i].when||''} <button class="del" data-i="${i}">✕</button></span></li>`;
+  return '<ul class="log">'+s+'</ul>';
+}
+function wireDel(cat, rerender){
+  catBody.querySelectorAll('.del').forEach(b => b.onclick = () => { entries[cat].splice(+b.dataset.i,1); saveEntries(); rerender(); });
+}
+
+/* ---- Meals (fridge): meal type + food + calories, with running total ---- */
+function renderMeals(){
+  const total = (entries.meals||[]).reduce((s,e)=>s+(+e.cal||0),0);
+  catBody.innerHTML =
+    `<div class="sec-label">Log a meal</div>
+     <div class="fin-form">
+       <select id="mMeal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+       <input type="text" id="mFood" placeholder="What you ate" />
+       <input type="text" id="mCal" inputmode="numeric" placeholder="kcal" style="width:60px" />
+       <button id="mAdd">Add</button>
+     </div>
+     <div class="kpi">Total calories logged: <b>${total}</b> kcal</div>
+     ${listHTML(entries.meals, e=>`<b>${escapeHtml(e.meal)}</b> · ${escapeHtml(e.food)}${e.cal?` · ${e.cal} kcal`:''}`)}`;
+  document.getElementById('mAdd').onclick = () => {
+    const food = document.getElementById('mFood').value.trim(); if (!food) return;
+    entries.meals.push({ meal:document.getElementById('mMeal').value, food, cal:parseInt(document.getElementById('mCal').value)||0, when:today() });
+    saveEntries(); renderMeals();
+  };
+  wireDel('meals', renderMeals);
+}
+
+/* ---- Fitness (dumbbell): category (custom-add) + what you did ---- */
+function renderFitness(){
+  catBody.innerHTML =
+    `<div class="sec-label">Log a workout</div>
+     <div class="fin-form">
+       <select id="fType">${fitCats.map(c=>`<option>${escapeHtml(c)}</option>`).join('')}<option value="__add">➕ Add category…</option></select>
+       <input type="text" id="fText" placeholder="What you did" />
+       <button id="fAdd">Add</button>
+     </div>
+     ${listHTML(entries.fitness, e=>`<b>${escapeHtml(e.type)}</b> · ${escapeHtml(e.text)}`)}`;
+  const sel = document.getElementById('fType');
+  sel.onchange = () => { if (sel.value==='__add'){ const n=(prompt('New workout category:')||'').trim(); if (n && !fitCats.includes(n)){ fitCats.push(n); store.save('lifecard.fitCats',fitCats); } renderFitness(); } };
+  document.getElementById('fAdd').onclick = () => {
+    const text = document.getElementById('fText').value.trim(); if (!text) return;
+    let type = sel.value; if (type==='__add') type = fitCats[0];
+    entries.fitness.push({ type, text, when:today() }); saveEntries(); renderFitness();
+  };
+  wireDel('fitness', renderFitness);
+}
+
+/* ---- Career (computer): mini resume builder — jobs + certs/skills ---- */
+function renderCareer(){
+  const jobs  = entries.career.filter(e=>e.kind==='job');
+  const creds = entries.career.filter(e=>e.kind==='cred');
+  catBody.innerHTML =
+    `<div class="sec-label">Add job experience</div>
+     <input type="text" id="jName" placeholder="Job title" style="margin-bottom:6px" />
+     <div class="row" style="margin-bottom:6px"><input type="text" id="jCo" placeholder="Company" /><input type="text" id="jDur" placeholder="Duration e.g. 2022–24" /></div>
+     <textarea id="jDesc" placeholder="Description" style="margin-bottom:6px"></textarea>
+     <button id="jAdd">Add job</button>
+     <div class="sec-label" style="margin-top:12px">Add certification / skill</div>
+     <div class="fin-form"><select id="cType"><option>Certification</option><option>Skill</option></select><input type="text" id="cName" placeholder="Name" /><button id="cAdd">Add</button></div>
+     <div class="sec-label" style="margin-top:12px">Experience</div>
+     ${jobs.length ? '<ul class="log">'+jobs.map(j=>`<li><span><b>${escapeHtml(j.name)}</b>${j.company?' @ '+escapeHtml(j.company):''}${j.duration?' · '+escapeHtml(j.duration):''}${j.desc?'<br><span style="color:#5a5570">'+escapeHtml(j.desc)+'</span>':''}</span><span class="when"><button class="delc" data-id="${j.id}">✕</button></span></li>`).join('')+'</ul>' : '<div class="empty">No jobs yet.</div>'}
+     <div class="sec-label">Certifications &amp; Skills</div>
+     ${creds.length ? '<ul class="log">'+creds.map(c=>`<li><span><b>${escapeHtml(c.ctype)}:</b> ${escapeHtml(c.name)}</span><span class="when"><button class="delc" data-id="${c.id}">✕</button></span></li>`).join('')+'</ul>' : '<div class="empty">None yet.</div>'}`;
+  document.getElementById('jAdd').onclick = () => {
+    const name = document.getElementById('jName').value.trim(); if (!name) return;
+    entries.career.push({ id:rid(), kind:'job', name, company:document.getElementById('jCo').value.trim(), duration:document.getElementById('jDur').value.trim(), desc:document.getElementById('jDesc').value.trim(), when:today() });
+    saveEntries(); renderCareer();
+  };
+  document.getElementById('cAdd').onclick = () => {
+    const nm = document.getElementById('cName').value.trim(); if (!nm) return;
+    entries.career.push({ id:rid(), kind:'cred', ctype:document.getElementById('cType').value, name:nm, when:today() });
+    saveEntries(); renderCareer();
+  };
+  catBody.querySelectorAll('.delc').forEach(b => b.onclick = () => { entries.career = entries.career.filter(e=>String(e.id)!==b.dataset.id); saveEntries(); renderCareer(); });
+}
+
+/* ---- Reading (bookshelf): book + pages read + status ---- */
+function renderReading(){
+  catBody.innerHTML =
+    `<div class="sec-label">Log a book</div>
+     <input type="text" id="bName" placeholder="Book title" style="margin-bottom:6px" />
+     <div class="fin-form">
+       <input type="text" id="bPages" inputmode="numeric" placeholder="Pages read" style="width:110px" />
+       <select id="bStatus"><option>Reading</option><option>Finished</option><option>Want to read</option></select>
+       <button id="bAdd">Add</button>
+     </div>
+     ${listHTML(entries.reading, e=>`<b>${escapeHtml(e.book)}</b> · ${escapeHtml(e.status)}${e.pages?` · ${e.pages} pp`:''}`)}`;
+  document.getElementById('bAdd').onclick = () => {
+    const book = document.getElementById('bName').value.trim(); if (!book) return;
+    entries.reading.push({ book, pages:parseInt(document.getElementById('bPages').value)||0, status:document.getElementById('bStatus').value, when:today() });
+    saveEntries(); renderReading();
+  };
+  wireDel('reading', renderReading);
+}
+
+/* ---- Mental (journal): mood face + text ---- */
+const MOODS = [['happy','😄'],['ok','🙂'],['meh','😐'],['sad','😢'],['mad','😠']];
+const moodEmoji = m => (MOODS.find(x=>x[0]===m)||['','🙂'])[1];
+function renderMental(){
+  catBody.innerHTML =
+    `<div class="sec-label">How do you feel?</div>
+     <div class="moods" id="moodRow">${MOODS.map(m=>`<button class="mood" data-m="${m[0]}">${m[1]}</button>`).join('')}</div>
+     <textarea id="jText" placeholder="What's on your mind…" style="margin:8px 0"></textarea>
+     <button id="jeAdd">Add entry</button>
+     ${listHTML(entries.mental, e=>`${moodEmoji(e.mood)} ${escapeHtml(e.text||'')}`)}`;
+  let chosen = null;
+  const row = document.getElementById('moodRow');
+  row.querySelectorAll('.mood').forEach(b => b.onclick = () => { chosen = b.dataset.m; row.querySelectorAll('.mood').forEach(x=>x.classList.toggle('sel', x===b)); });
+  document.getElementById('jeAdd').onclick = () => {
+    const text = document.getElementById('jText').value.trim();
+    if (!chosen && !text) return;
+    entries.mental.push({ mood:chosen||'ok', text, when:today() }); saveEntries(); renderMental();
+  };
+  wireDel('mental', renderMental);
+}
+
+/* ---- Water (cooler): 8 toggleable glass icons ---- */
+function renderWater(){
+  catBody.innerHTML =
+    `<div class="sec-label">Glasses of water today</div>
+     <div class="glasses" id="glassRow">${[0,1,2,3,4,5,6,7].map(i=>`<button class="glass" data-i="${i}">🥛</button>`).join('')}</div>
+     <div class="kpi" id="waterKpi"></div>`;
+  document.getElementById('glassRow').querySelectorAll('.glass').forEach(b => b.onclick = () => {
+    const i=+b.dataset.i; waterCount = (waterCount===i+1) ? i : i+1; store.save('lifecard.water',waterCount); paintGlasses();
+  });
+  paintGlasses();
+}
+function paintGlasses(){
+  const row = document.getElementById('glassRow'); if (!row) return;
+  row.querySelectorAll('.glass').forEach((b,i)=>b.classList.toggle('full', i<waterCount));
+  const k = document.getElementById('waterKpi'); if (k) k.innerHTML = `<b>${waterCount}</b> / 8 glasses`;
+}
+
+const RENDER = { meals:renderMeals, fitness:renderFitness, career:renderCareer, reading:renderReading, mental:renderMental, water:renderWater };
+function openCategory(cat){
+  activeCat = cat; paused = true;
+  const c = CATEGORIES[cat];
+  document.getElementById('catTitle').textContent = c.icon + '  ' + c.name;
+  document.getElementById('catSub').textContent = 'Log your day, then set a grade below.';
+  const saved = report[cat] || { grade:'—', comments:'' };
+  catGradeSel.value = saved.grade;
+  document.getElementById('catComments').value = saved.comments || '';
+  document.getElementById('catSaved').classList.remove('show');
+  (RENDER[cat] || (()=>{ catBody.innerHTML=''; }))();
+  catOverlay.classList.add('open');
+}
+function saveGrade(){
+  report[activeCat] = { grade: catGradeSel.value, comments: document.getElementById('catComments').value };
+  store.save('lifecard.report', report);
+  const tip = document.getElementById('catSaved'); tip.classList.add('show');
+  setTimeout(()=>tip.classList.remove('show'), 1400);
+}
+document.getElementById('catAI').onclick = (e) => {
+  if (!activeCat) return;
+  const data = activeCat==='water' ? { glasses: waterCount } : (entries[activeCat]||[]);
+  aiAssess(CATEGORIES[activeCat].name, data, (r) => {
+    catGradeSel.value = r.grade;
+    document.getElementById('catComments').value = (r.suggestions||[]).map(s=>'• '+s).join('\n');
+  }, e.currentTarget);
+};
+document.getElementById('catSave').onclick = saveGrade;
+document.getElementById('catClose').onclick = closeModal;
+catOverlay.addEventListener('mousedown', e => { if (e.target===catOverlay) closeModal(); });
+function closeModal(){
+  catOverlay.classList.remove('open');
+  document.getElementById('finOverlay').classList.remove('open');
+  document.getElementById('resOverlay').classList.remove('open');
+  paused=false; activeCat=null;
+}
+
+/* ============================================================
+   FINANCES — account book (income, spending, chart, tips)
+   ============================================================ */
+const EXP_CATS = ['Food','Rent','Transport','Shopping','Entertainment','Subscriptions','Bills','Other'];
+const EXP_COLORS = { Food:'#e0663b', Rent:'#3b78e0', Transport:'#2f9e44', Shopping:'#d24bb0',
+                     Entertainment:'#f0b429', Subscriptions:'#8a4ad2', Bills:'#e03b3b', Other:'#7a8a96' };
+const FIN_TIPS = {
+  Food:'Try meal-prepping or cooking at home a few more nights.',
+  Rent:'Big fixed cost — a roommate or renegotiating could help.',
+  Transport:'Combine trips, carpool, or switch to transit/biking.',
+  Shopping:'Add a 24-hour wait before non-essential buys.',
+  Entertainment:'Look for free events or rotate paid outings.',
+  Subscriptions:'Audit recurring subs and cancel what you don’t use.',
+  Bills:'Compare providers or cut usage on the priciest bill.',
+  Other:'Tag these more specifically to spot savings.',
+};
+const finOverlay = document.getElementById('finOverlay');
+const finType = document.getElementById('finType');
+const finCat = document.getElementById('finCat');
+const finGradeSel = document.getElementById('finGrade');
+finCat.innerHTML = EXP_CATS.map(c=>`<option>${c}</option>`).join('');
+finGradeSel.innerHTML = GRADES.map(g=>`<option>${g}</option>`).join('');
+
+function money(n){ const neg=n<0, v=Math.round(Math.abs(n)*100)/100; return (neg?'-$':'$') + v.toLocaleString(undefined,{maximumFractionDigits:2}); }
+function syncFinForm(){ finCat.style.display = finType.value==='expense' ? '' : 'none'; }
+finType.addEventListener('change', syncFinForm);
+
+function openFinances(){
+  paused = true;
+  const saved = report.finances || { grade:'—', comments:'' };
+  finGradeSel.value = saved.grade;
+  document.getElementById('finComments').value = saved.comments || '';
+  finType.value = 'expense'; syncFinForm();
+  document.getElementById('finAmt').value = '';
+  document.getElementById('finNote').value = '';
+  document.getElementById('finSaved').classList.remove('show');
+  renderFinances();
+  finOverlay.classList.add('open');
+  setTimeout(()=>document.getElementById('finAmt').focus(), 0);
+}
+function addTxn(){
+  const amt = parseFloat(document.getElementById('finAmt').value);
+  if (!(amt > 0)) return;
+  const type = finType.value;
+  finances.push({
+    type, amount: amt,
+    cat: type==='expense' ? finCat.value : 'Income',
+    note: document.getElementById('finNote').value.trim(),
+    when: new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'}),
+  });
+  store.save('lifecard.finances', finances);
+  document.getElementById('finAmt').value = '';
+  document.getElementById('finNote').value = '';
+  document.getElementById('finAmt').focus();
+  renderFinances();
+}
+function delTxn(i){ finances.splice(i,1); store.save('lifecard.finances', finances); renderFinances(); }
+
+function renderFinances(){
+  const income = finances.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const spend  = finances.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal = income - spend;
+  document.getElementById('finIncome').textContent = money(income);
+  document.getElementById('finSpend').textContent  = money(spend);
+  const balEl = document.getElementById('finBal');
+  balEl.textContent = money(bal); balEl.className = 'v ' + (bal>=0?'pos':'neg');
+
+  const byCat = {};
+  for (const t of finances) if (t.type==='expense') byCat[t.cat] = (byCat[t.cat]||0) + t.amount;
+  const cats = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
+  drawFinChart(byCat, cats, spend);
+
+  document.getElementById('finLegend').innerHTML = cats.length
+    ? cats.map(c=>`<li><span class="sw" style="background:${EXP_COLORS[c]}"></span>${c} <b>${money(byCat[c])}</b> <span class="pct">${Math.round(byCat[c]/spend*100)}%</span></li>`).join('')
+    : '<li class="none">No expenses logged yet.</li>';
+
+  const tips = [];
+  if (!cats.length) tips.push('Log some expenses to get personalized tips.');
+  else {
+    const top = cats[0], pct = Math.round(byCat[top]/spend*100);
+    tips.push(`Your biggest expense is <b>${top}</b> at ${money(byCat[top])} (${pct}% of spending). ${FIN_TIPS[top]}`);
+    if (cats[1]) tips.push(`Next up: <b>${cats[1]}</b> (${money(byCat[cats[1]])}). ${FIN_TIPS[cats[1]]}`);
+    if (income>0 && spend>income) tips.push(`⚠️ You spent ${money(spend-income)} more than you earned — trimming ${top} would help close the gap.`);
+    else if (income>0) { const rate = Math.round((income-spend)/income*100); tips.push(`You're saving about <b>${rate}%</b> of your income${rate>=20?' — nicely done!':'. Aim for 20%+.'}`); }
+  }
+  document.getElementById('finSug').innerHTML = tips.map(t=>`<li>${t}</li>`).join('');
+
+  const ul = document.getElementById('finList');
+  if (!finances.length) ul.innerHTML = '<div class="empty">No transactions yet.</div>';
+  else {
+    ul.innerHTML = '';
+    for (let i=finances.length-1;i>=0;i--){
+      const t = finances[i], sign = t.type==='income'?'+':'−', col = t.type==='income'?'inc':'exp';
+      const li = document.createElement('li');
+      li.innerHTML = `<span><b class="${col}">${sign}${money(t.amount)}</b> ${t.type==='income'?'Income':escapeHtml(t.cat)}${t.note?' · '+escapeHtml(t.note):''}</span>`
+                   + `<span class="when">${t.when} <button class="del" data-i="${i}">✕</button></span>`;
+      ul.appendChild(li);
+    }
+    ul.querySelectorAll('.del').forEach(b => b.onclick = () => delTxn(+b.dataset.i));
+  }
+}
+function drawFinChart(byCat, cats, spend){
+  const cv = document.getElementById('finChart'), c = cv.getContext('2d');
+  c.clearRect(0,0,cv.width,cv.height);
+  const cx=70, cy=70, r=58;
+  if (!spend){ c.fillStyle='#e7ecf5'; c.beginPath(); c.arc(cx,cy,r,0,Math.PI*2); c.fill();
+    c.fillStyle='#8480a0'; c.font='11px sans-serif'; c.textAlign='center'; c.fillText('No spending',cx,cy+4); return; }
+  let a = -Math.PI/2;
+  for (const cat of cats){ const slice = byCat[cat]/spend*Math.PI*2;
+    c.beginPath(); c.moveTo(cx,cy); c.arc(cx,cy,r,a,a+slice); c.closePath();
+    c.fillStyle = EXP_COLORS[cat]; c.fill(); a += slice; }
+  c.fillStyle='#fffdf6'; c.beginPath(); c.arc(cx,cy,26,0,Math.PI*2); c.fill();
+  c.fillStyle='#283860'; c.font='bold 13px sans-serif'; c.textAlign='center'; c.fillText(money(spend),cx,cy+1);
+  c.fillStyle='#8480a0'; c.font='9px sans-serif'; c.fillText('spent',cx,cy+12);
+}
+function saveFinGrade(){
+  report.finances = { grade: finGradeSel.value, comments: document.getElementById('finComments').value };
+  store.save('lifecard.report', report);
+  const tip = document.getElementById('finSaved'); tip.classList.add('show');
+  setTimeout(()=>tip.classList.remove('show'), 1400);
+}
+document.getElementById('finAdd').onclick = addTxn;
+document.getElementById('finAmt').addEventListener('keydown', e => { if (e.key==='Enter') addTxn(); });
+document.getElementById('finAI').onclick = (e) => {
+  const income = finances.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const spend  = finances.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  aiAssess('Finances', { income, spend, balance: income-spend, transactions: finances }, (r) => {
+    finGradeSel.value = r.grade;
+    document.getElementById('finComments').value = (r.suggestions||[]).map(s=>'• '+s).join('\n');
+  }, e.currentTarget);
+};
+document.getElementById('finSave').onclick = saveFinGrade;
+document.getElementById('finClose').onclick = closeModal;
+finOverlay.addEventListener('mousedown', e => { if (e.target===finOverlay) closeModal(); });
+
+/* ============================================================
+   RESUME PRINTER — builds a resume from the Career log
+   ============================================================ */
+let profile = store.load('lifecard.profile', { name:'', contact:'' });
+const resOverlay = document.getElementById('resOverlay');
+const resName = document.getElementById('resName');
+const resContact = document.getElementById('resContact');
+
+function openPrinter(){
+  paused = true;
+  resName.value = profile.name || '';
+  resContact.value = profile.contact || '';
+  renderResume();
+  resOverlay.classList.add('open');
+}
+function saveProfile(){ profile = { name: resName.value, contact: resContact.value }; store.save('lifecard.profile', profile); }
+function resumeSections(){
+  const career = entries.career || [];
+  const jobs   = career.filter(e=>e.kind==='job' || (!e.kind && e.text));   // tolerate old entries
+  const certs  = career.filter(e=>e.kind==='cred' && e.ctype==='Certification');
+  const skills = career.filter(e=>e.kind==='cred' && e.ctype==='Skill');
+  return { jobs, certs, skills };
+}
+function renderResume(){
+  const { jobs, certs, skills } = resumeSections();
+  const exp = jobs.length
+    ? '<ul>'+jobs.map(j=>`<li><b>${escapeHtml(j.name||j.text||'')}</b>${j.company?' @ '+escapeHtml(j.company):''}${j.duration?' · '+escapeHtml(j.duration):''}${j.desc?'<br><span style="color:#777">'+escapeHtml(j.desc)+'</span>':''}</li>`).join('')+'</ul>'
+    : '<div class="muted" style="font-size:12px">No jobs yet — add some at the 💻 computer.</div>';
+  const certHtml  = certs.length  ? '<ul>'+certs.map(c=>`<li>${escapeHtml(c.name)}</li>`).join('')+'</ul>' : '';
+  const skillHtml = skills.length ? '<div>'+skills.map(s=>escapeHtml(s.name)).join(', ')+'</div>' : '';
+  document.getElementById('resPreview').innerHTML =
+      `<div class="res-name">${escapeHtml(resName.value||'Your Name')}</div>`
+    + `<div class="res-contact">${escapeHtml(resContact.value||'add email · phone · location')}</div>`
+    + `<div class="res-h">Experience</div>${exp}`
+    + (certs.length  ? `<div class="res-h">Certifications</div>${certHtml}` : '')
+    + (skills.length ? `<div class="res-h">Skills</div>${skillHtml}` : '');
+}
+function printResume(){
+  saveProfile();
+  const name = resName.value.trim() || 'Your Name';
+  const contact = resContact.value.trim();
+  const { jobs, certs, skills } = resumeSections();
+  const exp = jobs.length
+    ? '<ul>'+jobs.map(j=>`<li><b>${escapeHtml(j.name||j.text||'')}</b>${j.company?' — '+escapeHtml(j.company):''}${j.duration?' <span class="dur">('+escapeHtml(j.duration)+')</span>':''}${j.desc?'<div class="d">'+escapeHtml(j.desc)+'</div>':''}</li>`).join('')+'</ul>'
+    : '<p>(No experience logged yet.)</p>';
+  const certHtml  = certs.length  ? '<ul>'+certs.map(c=>`<li>${escapeHtml(c.name)}</li>`).join('')+'</ul>' : '';
+  const skillHtml = skills.length ? '<p class="skills">'+skills.map(s=>escapeHtml(s.name)).join(', ')+'</p>' : '';
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(name)} — Resume</title>`
+    + `<style>body{font-family:Georgia,'Times New Roman',serif;max-width:720px;margin:40px auto;color:#222;padding:0 24px}`
+    + `h1{margin:0;font-size:30px;letter-spacing:.5px}.c{color:#555;font-size:13px;margin:4px 0 22px}`
+    + `h2{border-bottom:2px solid #333;padding-bottom:4px;font-size:15px;margin:22px 0 8px;text-transform:uppercase;letter-spacing:1px}`
+    + `ul{padding-left:20px;margin:0}li{margin:8px 0;line-height:1.4}.dur{color:#777}.d{font-size:13px;color:#444;margin-top:2px}.skills{margin:0;line-height:1.5}@media print{body{margin:0}}</style></head>`
+    + `<body><h1>${escapeHtml(name)}</h1><div class="c">${escapeHtml(contact)}</div>`
+    + `<h2>Experience</h2>${exp}`
+    + (certs.length  ? `<h2>Certifications</h2>${certHtml}` : '')
+    + (skills.length ? `<h2>Skills</h2>${skillHtml}` : '') + `</body></html>`;
+  const w = window.open('', '_blank');
+  if (!w){ alert('Please allow pop-ups to print your resume.'); return; }
+  w.document.write(doc); w.document.close(); w.focus();
+  setTimeout(()=>w.print(), 300);
+}
+resName.addEventListener('input', ()=>{ saveProfile(); renderResume(); });
+resContact.addEventListener('input', ()=>{ saveProfile(); renderResume(); });
+document.getElementById('resPrint').onclick = printResume;
+document.getElementById('resClose').onclick = closeModal;
+resOverlay.addEventListener('mousedown', e => { if (e.target===resOverlay) closeModal(); });
+
+/* ============================================================
+   REPORT CARD TAB
+   ============================================================ */
+function countFor(k){ if (k==='finances') return finances.length; if (k==='water') return waterCount; return (entries[k]||[]).length; }
+function gradeClass(g){ if (!g || g==='—') return 'g-none'; return 'g-'+g[0]; }
+function disp(g){ return (g && g!=='—') ? g : '—'; }
+function lettersFromPts(a){
+  return a>=3.85?'A':a>=3.5?'A-':a>=3.15?'B+':a>=2.85?'B':a>=2.5?'B-':a>=2.15?'C+':a>=1.85?'C':a>=1.5?'C-':a>=0.5?'D':'F';
+}
+function avgGrade(cats){
+  const pts=[]; for (const k of cats){ const g=report[k]?.grade; if (g && g!=='—' && g in POINTS) pts.push(POINTS[g]); }
+  return pts.length ? lettersFromPts(pts.reduce((a,b)=>a+b,0)/pts.length) : '—';
+}
+function overall(){
+  const cats = Object.keys(CATEGORIES);
+  const pts=[]; for (const k of cats){ const g=report[k]?.grade; if (g && g!=='—' && g in POINTS) pts.push(POINTS[g]); }
+  if (!pts.length) return { letter:'—', gpa:null };
+  const avg = pts.reduce((a,b)=>a+b,0)/pts.length;
+  return { letter: lettersFromPts(avg), gpa: avg.toFixed(2) };
+}
+function catRow(k, sub){
+  const c = CATEGORIES[k]; const r = report[k] || {}; const cnt = countFor(k);
+  return `<tr class="${sub?'sub':''}">
+    <td class="cat">${c.icon} ${c.name}<div class="cnt">${cnt} ${cnt===1?'entry':'entries'}</div></td>
+    <td class="grade ${gradeClass(r.grade)}">${disp(r.grade)}</td>
+    <td class="cmt ${r.comments?'':'none'}">${r.comments ? escapeHtml(r.comments) : (sub?'—':'No comments yet.')}</td>
+  </tr>`;
+}
+function renderReportTab(){
+  const v = document.getElementById('view-report');
+  const date = new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const ov = overall();
+  let rows = '';
+  for (const sec of SECTIONS){
+    if (sec.cats.length === 1){
+      rows += catRow(sec.cats[0], false);
+    } else {
+      const sg = avgGrade(sec.cats);
+      rows += `<tr class="sechead"><td>${sec.icon} ${sec.name}</td><td class="grade ${gradeClass(sg)}">${sg}</td><td></td></tr>`;
+      for (const k of sec.cats) rows += catRow(k, true);
+    }
+  }
+  v.innerHTML = `
+    <div class="rc-head"><div class="title">Report Card</div><div class="date">${date}</div></div>
+    <div class="rc-overall">
+      <div class="big ${gradeClass(ov.letter)}">${ov.letter}</div>
+      <div><div class="lbl">Overall Grade</div>
+        <div class="gpa">${ov.gpa ? 'GPA ' + ov.gpa + ' / 4.0' : 'Grade some objects to see your GPA'}</div></div>
+    </div>
+    <table class="rc">
+      <thead><tr><th>Category</th><th style="text-align:center">Grade</th><th>Comments</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="text-align:center;margin-top:16px"><button onclick="exportReportPNG()">⬇ Export as PNG</button></div>`;
+}
+
+/* ---- Export the report card as a PNG image ---- */
+function gradeHex(g){ const m={A:'#2f9e44',B:'#3b78e0',C:'#d6a400',D:'#e8590c',F:'#e03b3b'}; return (!g||g==='—') ? '#8480a0' : (m[g[0]]||'#283860'); }
+function roundRectP(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+function wrapText(c,text,maxW){
+  const words=String(text).split(/\s+/); const lines=[]; let line='';
+  for (const w of words){ const t=line?line+' '+w:w; if (c.measureText(t).width>maxW && line){ lines.push(line); line=w; } else line=t; }
+  if (line) lines.push(line); return lines;
+}
+function layoutReport(c, draw, Wd, pad){
+  const dateStr = new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let y = pad;
+  c.textAlign='center';
+  if (draw){ c.fillStyle='#283860'; c.font='bold 26px sans-serif'; c.fillText('LIFE REPORT CARD', Wd/2, y+22); } y+=34;
+  if (draw){ c.fillStyle='#8480a0'; c.font='12px sans-serif'; c.fillText(dateStr, Wd/2, y+4); } y+=16;
+  if (draw){ c.strokeStyle='#283860'; c.lineWidth=2; c.beginPath(); c.moveTo(pad,y); c.lineTo(Wd-pad,y); c.stroke(); } y+=18;
+  const ov=overall(), boxH=64;
+  if (draw){ c.fillStyle='#fff3d6'; roundRectP(c,pad,y,Wd-2*pad,boxH,10); c.fill(); c.strokeStyle='#283860'; c.lineWidth=2; c.stroke();
+    c.textAlign='left'; c.fillStyle=gradeHex(ov.letter); c.font='bold 40px sans-serif'; c.fillText(ov.letter, pad+18, y+45);
+    c.fillStyle='#283860'; c.font='bold 12px sans-serif'; c.fillText('OVERALL GRADE', pad+86, y+28);
+    c.fillStyle='#8480a0'; c.font='13px sans-serif'; c.fillText(ov.gpa?('GPA '+ov.gpa+' / 4.0'):'No grades yet', pad+86, y+47);
+  } y+=boxH+18;
+  c.textAlign='left';
+  for (const sec of SECTIONS){
+    if (sec.cats.length>1){
+      const sg=avgGrade(sec.cats);
+      if (draw){ c.fillStyle='#eaf1ff'; c.fillRect(pad,y,Wd-2*pad,26); c.fillStyle='#283860'; c.font='bold 14px sans-serif'; c.textAlign='left'; c.fillText(sec.icon+' '+sec.name, pad+8, y+18);
+        c.textAlign='right'; c.fillStyle=gradeHex(sg); c.font='bold 18px sans-serif'; c.fillText(sg, Wd-pad-10, y+19); c.textAlign='left'; }
+      y+=30;
+      for (const k of sec.cats) y=pngRow(c,draw,Wd,pad,k,true,y);
+    } else { y=pngRow(c,draw,Wd,pad,sec.cats[0],false,y); }
+  }
+  return y+pad;
+}
+function pngRow(c,draw,Wd,pad,k,sub,y){
+  const cat=CATEGORIES[k], r=report[k]||{}, cnt=countFor(k);
+  const nameX=pad+(sub?18:4);
+  const g=(r.grade&&r.grade!=='—')?r.grade:'—';
+  if (draw){ c.textAlign='left'; c.fillStyle='#283860'; c.font='bold 14px sans-serif'; c.fillText(cat.icon+' '+cat.name, nameX, y+14);
+    c.fillStyle='#8480a0'; c.font='10px sans-serif'; c.fillText(cnt+' '+(cnt===1?'entry':'entries'), nameX, y+26);
+    c.textAlign='right'; c.fillStyle=gradeHex(g); c.font='bold 22px sans-serif'; c.fillText(g, Wd-pad-10, y+22); c.textAlign='left'; }
+  let rowH=32;
+  const comments=r.comments||'';
+  if (comments){ c.font='13px sans-serif'; const lines=wrapText(c,comments,Wd-pad-nameX-4);
+    if (draw){ c.fillStyle='#5a5570'; lines.forEach((ln,i)=>c.fillText(ln,nameX,y+30+i*16)); } rowH=30+lines.length*16+6; }
+  if (draw){ c.strokeStyle='#ece6d0'; c.lineWidth=1; c.beginPath(); c.moveTo(pad,y+rowH-2); c.lineTo(Wd-pad,y+rowH-2); c.stroke(); }
+  return y+rowH;
+}
+function exportReportPNG(){
+  const Wd=680, pad=28, scale=2;
+  const tmp=document.createElement('canvas').getContext('2d');
+  const totalH=Math.ceil(layoutReport(tmp,false,Wd,pad));
+  const cv=document.createElement('canvas'); cv.width=Wd*scale; cv.height=totalH*scale;
+  const c=cv.getContext('2d'); c.scale(scale,scale);
+  c.fillStyle='#fffdf6'; c.fillRect(0,0,Wd,totalH);
+  layoutReport(c,true,Wd,pad);
+  const a=document.createElement('a'); a.download='life-report-card.png'; a.href=cv.toDataURL('image/png'); a.click();
+}
+
+/* ============================================================
+   LOGS TAB — browse everything you've logged
+   ============================================================ */
+const FMT = {
+  meals:   e=>`<b>${escapeHtml(e.meal)}</b> · ${escapeHtml(e.food)}${e.cal?` · ${e.cal} kcal`:''}`,
+  fitness: e=>`<b>${escapeHtml(e.type)}</b> · ${escapeHtml(e.text)}`,
+  reading: e=>`<b>${escapeHtml(e.book)}</b> · ${escapeHtml(e.status)}${e.pages?` · ${e.pages} pp`:''}`,
+  mental:  e=>`${moodEmoji(e.mood)} ${escapeHtml(e.text||'')}`,
+  career:  e=> e.kind==='cred'
+    ? `<b>${escapeHtml(e.ctype)}:</b> ${escapeHtml(e.name)}`
+    : `<b>${escapeHtml(e.name||e.text||'')}</b>${e.company?' @ '+escapeHtml(e.company):''}${e.duration?' · '+escapeHtml(e.duration):''}`,
+};
+function renderLogsTab(){
+  const v = document.getElementById('view-logs');
+  let html = `<div class="rc-head"><div class="title">Activity Log</div><div class="date">everything you've logged</div></div>`;
+  for (const k of Object.keys(CATEGORIES)){
+    const c = CATEGORIES[k];
+    let body;
+    if (k==='water'){
+      body = `<div class="log-empty">${waterCount} / 8 glasses today</div>`;
+    } else if (k==='finances'){
+      body = finances.length
+        ? '<ul class="log">'+finances.slice().reverse().map(t=>`<li><span><b class="${t.type==='income'?'inc':'exp'}">${t.type==='income'?'+':'−'}${money(t.amount)}</b> ${t.type==='income'?'Income':escapeHtml(t.cat)}${t.note?' · '+escapeHtml(t.note):''}</span><span class="when">${t.when||''}</span></li>`).join('')+'</ul>'
+        : '<div class="log-empty">No transactions.</div>';
+    } else {
+      const arr = entries[k]||[];
+      body = arr.length
+        ? '<ul class="log">'+arr.slice().reverse().map(e=>`<li><span>${FMT[k](e)}</span><span class="when">${e.when||''}</span></li>`).join('')+'</ul>'
+        : '<div class="log-empty">No entries.</div>';
+    }
+    html += `<div class="log-sec"><div class="log-h">${c.icon} ${c.name}</div>${body}</div>`;
+  }
+  v.innerHTML = html;
+}
+
+/* ============================================================
+   CUSTOMIZE TAB — theme + avatar
+   ============================================================ */
+function placeLogos(){
+  const sc=document.getElementById('logoScreen'), bn=document.getElementById('logoBanner'); if (!sc||!bn) return;
+  const d=objects.find(o=>o.id==='desk').box, mx=d[0]+Math.floor(d[2]/2)-8;
+  sc.style.left=((mx+1)*SCALE)+'px'; sc.style.top=((d[1]-1)*SCALE)+'px'; sc.style.width=(14*SCALE)+'px'; sc.style.height=(8*SCALE)+'px';
+  sc.style.display=(sc.complete&&sc.naturalWidth)?'block':'none';
+  bn.style.left=(47*SCALE)+'px'; bn.style.top=(2*SCALE)+'px'; bn.style.width=(66*SCALE)+'px'; bn.style.height=(10*SCALE)+'px';
+  bn.style.display=(bn.complete&&bn.naturalWidth&&theme==='hanwha')?'block':'none';
+}
+function applyTheme(){ document.body.style.background = theme==='hanwha' ? 'linear-gradient(#ffa64d,#f37321)' : 'linear-gradient(#79c6ef,#a9e0b0)'; placeLogos(); }
+document.getElementById('logoScreen').onload = placeLogos;
+document.getElementById('logoBanner').onload = placeLogos;
+function renderCustomizeTab(){
+  const v = document.getElementById('view-customize');
+  const shirts = ['#d24b4b','#3b78e0','#2f9e44','#8a4ad2','#e07b39','#f37321','#d24bb0','#3f7e86'];
+  const hairs  = ['#7a4a2a','#2b2024','#caa05a','#9a3b2a','#5a3a6a','#d24b4b','#2f9e44'];
+  v.innerHTML = `
+    <div class="rc-head"><div class="title">Customize</div><div class="date">make it yours</div></div>
+    <div class="sec-label">Room theme</div>
+    <div class="themes">
+      <button class="theme-card ${theme==='cozy'?'sel':''}" data-th="cozy"><div class="sw-room cozy"></div>Cozy <small>(default)</small></button>
+      <button class="theme-card ${theme==='hanwha'?'sel':''}" data-th="hanwha"><div class="sw-room hanwha"></div>Hanwha</button>
+    </div>
+    <div class="cz-row">
+      <canvas id="avPrev" width="120" height="150"></canvas>
+      <div style="flex:1">
+        <div class="sec-label">Shirt colour ${theme==='hanwha'?'<small>(Hanwha tee active)</small>':''}</div>
+        <div class="swatches" id="shirtSw">${shirts.map(c=>`<button class="sw-c ${avatar.shirt===c?'sel':''}" style="background:${c}" data-c="${c}"></button>`).join('')}</div>
+        <div class="sec-label">Hair colour</div>
+        <div class="swatches" id="hairSw">${hairs.map(c=>`<button class="sw-c ${avatar.hair===c?'sel':''}" style="background:${c}" data-c="${c}"></button>`).join('')}</div>
+        <div class="sec-label">Hairstyle</div>
+        <div class="swatches" id="hstyleSw">${Object.keys(HAIRSTYLES).map(k=>`<button class="hbtn ${(avatar.hairStyle||'ponytail')===k?'sel':''}" data-h="${k}">${HAIRSTYLES[k].name}</button>`).join('')}</div>
+      </div>
+    </div>
+    <div class="rc-note" style="text-align:left;margin:6px 0 12px">Your avatar updates live over in the Room tab.</div>
+    <div class="sec-label">AI grading (optional)</div>
+    <input type="password" id="aiKey" placeholder="API key — Anthropic (sk-ant-…) or Google Gemini (AIza…)" value="${escapeHtml(aiKey)}" />
+    <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+      <label style="font-size:12px;color:var(--navy);font-weight:bold">Provider</label>
+      <select id="aiProv" style="width:auto">
+        <option value="auto" ${aiProvider==='auto'?'selected':''}>Auto-detect</option>
+        <option value="anthropic" ${aiProvider==='anthropic'?'selected':''}>Anthropic (Claude)</option>
+        <option value="google" ${aiProvider==='google'?'selected':''}>Google (Gemini)</option>
+      </select>
+    </div>
+    <div class="rc-note" style="text-align:left;margin-top:6px">Lets the ✨ AI buttons grade you and suggest improvements. Paste an <b>Anthropic</b> (sk-ant-…) or <b>Google Gemini</b> (AIza…) key — it's auto-detected and uses that provider's cheapest model (Claude Haiku / Gemini Flash-Lite) with short replies and trimmed data to keep cost low. Your key is stored only in this browser and is visible in the page source — use your own key on your own device. Leave blank to grade manually.</div>
+    <div class="sec-label">Data backup</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="dataExport">⬇ Export data</button>
+      <button class="ghost" id="dataImport">⬆ Import data</button>
+      <input type="file" id="dataFile" accept="application/json,.json" style="display:none" />
+    </div>
+    <div class="rc-note" style="text-align:left;margin-top:6px">Saves everything you've logged (entries, grades, finances, theme, avatar, hairstyle) to a JSON file — your API key is excluded. Import it on your hosted Netlify site to carry your data over.</div>`;
+  v.querySelectorAll('.theme-card').forEach(b=>b.onclick=()=>{ theme=b.dataset.th; store.save('lifecard.theme',theme); applyTheme(); renderCustomizeTab(); });
+  v.querySelectorAll('#shirtSw .sw-c').forEach(b=>b.onclick=()=>{ avatar.shirt=b.dataset.c; store.save('lifecard.avatar',avatar); renderCustomizeTab(); });
+  v.querySelectorAll('#hairSw .sw-c').forEach(b=>b.onclick=()=>{ avatar.hair=b.dataset.c; store.save('lifecard.avatar',avatar); renderCustomizeTab(); });
+  v.querySelectorAll('#hstyleSw .hbtn').forEach(b=>b.onclick=()=>{ avatar.hairStyle=b.dataset.h; store.save('lifecard.avatar',avatar); renderCustomizeTab(); });
+  const ak=v.querySelector('#aiKey'); if (ak) ak.oninput=e=>{ aiKey=e.target.value.trim(); store.save('lifecard.aikey',aiKey); };
+  const ap=v.querySelector('#aiProv'); if (ap) ap.onchange=e=>{ aiProvider=e.target.value; store.save('lifecard.aiprovider',aiProvider); };
+  const de=v.querySelector('#dataExport'); if (de) de.onclick=exportData;
+  const df=v.querySelector('#dataFile'), di=v.querySelector('#dataImport');
+  if (di && df){ di.onclick=()=>df.click(); df.onchange=e=>{ if (e.target.files[0]) importData(e.target.files[0]); }; }
+  drawPreview();
+}
+function paintAvatar(c,S,dx,dy,ov){
+  const bx=2*S+dx, by=4*S+dy;
+  const P=(cx,cy,w,h,col)=>{ c.fillStyle=ov||col; c.fillRect(bx+cx*S, by+cy*S, w*S, h*S); };
+  const skin='#f3c89a', skinSh='#e0a877', hair=avatar.hair, eye='#2b2838';
+  const shirt = theme==='hanwha' ? '#ffffff' : avatar.shirt;
+  P(2,7,6,4,shirt); P(1,10,8,3,shirt);                 // shirt
+  if (theme==='hanwha' && !ov && iconReady){ c.imageSmoothingEnabled=true; c.drawImage(iconImg, bx+2.5*S, by+7.5*S, 5*S, 5*S); c.imageSmoothingEnabled=false; }
+  P(1,8,1,3,skinSh); P(8,8,1,3,skinSh);                // arms
+  P(3,13,2,1,'#3a3a48'); P(5,13,2,1,'#3a3a48');         // legs
+  P(2,2,6,5,skin);                                      // face base
+  const plot=(cx,cy,w,h)=>P(cx,cy,w,h,hair);            // hairstyle
+  (HAIRSTYLES[avatar.hairStyle]||HAIRSTYLES.ponytail).draw(plot,'down');
+  P(3,4,1,2,eye); P(6,4,1,2,eye); P(4,6,2,1,'#c4546a');
+}
+function drawPreview(){
+  const cv = document.getElementById('avPrev'); if (!cv) return;
+  const c = cv.getContext('2d'); c.imageSmoothingEnabled=false;
+  c.fillStyle = theme==='hanwha' ? '#f5934e' : '#bfe0f0'; c.fillRect(0,0,cv.width,cv.height);
+  c.fillStyle = theme==='hanwha' ? '#6f9fd8' : '#e7c48b'; c.fillRect(0,cv.height-44,cv.width,44);  // floor
+  const S=8;
+  for (const o of [[-2,0],[2,0],[0,-2],[0,2]]) paintAvatar(c,S,o[0],o[1],'#161616');  // silhouette
+  paintAvatar(c,S,0,0,null);
+}
+applyTheme();
+
+/* ============================================================
+   AI grading — sends logged data to Claude, returns grade + tips
+   ============================================================ */
+const GRADE_ENUM = ['A+','A','A-','B+','B','B-','C+','C','C-','D','F'];
+const AI_SYS = "You are a concise life coach. Given a life category and logged data, return a letter grade (A+ to F) and 2-3 short, specific suggestions. Be brief; base it only on the data.";
+const aiUserText = (label, payload) => `Category: ${label}\nData: ${JSON.stringify(payload)}`;
+
+// Anthropic Claude (cheapest: Haiku)
+async function callClaude(label, payload){
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type':'application/json', 'x-api-key':aiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5', max_tokens: 500, system: AI_SYS,
+      messages: [{ role:'user', content: aiUserText(label,payload) }],
+      output_config: { format: { type:'json_schema', schema: {
+        type:'object',
+        properties: { grade:{type:'string',enum:GRADE_ENUM}, suggestions:{type:'array',items:{type:'string'}} },
+        required:['grade','suggestions'], additionalProperties:false } } },
+    }),
+  });
+  if (!res.ok) throw new Error('Anthropic ' + res.status + ' — ' + (await res.text()).slice(0,160));
+  const j = await res.json();
+  if (j.stop_reason === 'refusal') throw new Error('the model declined this request.');
+  return JSON.parse((j.content.find(b => b.type === 'text') || {}).text || '{}');
+}
+
+// Google Gemini (cheapest: Flash-Lite)
+async function callGemini(label, payload){
+  const model = 'gemini-2.0-flash-lite';
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+    method: 'POST',
+    headers: { 'content-type':'application/json', 'x-goog-api-key':aiKey },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: AI_SYS }] },
+      contents: [{ role:'user', parts: [{ text: aiUserText(label,payload) }] }],
+      generationConfig: {
+        maxOutputTokens: 500,
+        responseMimeType: 'application/json',
+        responseSchema: { type:'OBJECT', properties: { grade:{type:'STRING',enum:GRADE_ENUM}, suggestions:{type:'ARRAY',items:{type:'STRING'}} }, required:['grade','suggestions'] },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error('Google ' + res.status + ' — ' + (await res.text()).slice(0,160));
+  const j = await res.json();
+  const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
+  if (!txt) throw new Error('empty response' + (j && j.promptFeedback ? ' (request blocked)' : ''));
+  return JSON.parse(txt);
+}
+
+async function aiAssess(label, data, onResult, btn){
+  if (!aiKey){ alert('Add your API key in the 🎨 Customize tab first (AI grading section).'); return; }
+  const payload = Array.isArray(data) ? { count: data.length, recent: data.slice(-12) } : data;  // trim tokens
+  const old = btn ? btn.textContent : '';
+  if (btn){ btn.disabled = true; btn.textContent = '✨ …'; }
+  try {
+    const useGoogle = aiProvider === 'google' || (aiProvider === 'auto' && aiKey.startsWith('AIza'));
+    const parsed = useGoogle ? await callGemini(label, payload) : await callClaude(label, payload);
+    onResult(parsed);
+  } catch (e){
+    alert('AI assessment failed: ' + e.message);
+  } finally {
+    if (btn){ btn.disabled = false; btn.textContent = old; }
+  }
+}
+
+/* ============================================================
+   DATA BACKUP — export / import everything (API key excluded)
+   ============================================================ */
+function exportData(){
+  const out = {};
+  for (let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if (k && k.startsWith('lifecard.') && k !== 'lifecard.aikey') out[k] = localStorage.getItem(k);
+  }
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pocket-life-backup.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importData(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = JSON.parse(r.result); let n = 0;
+      for (const k in obj){
+        if (k.startsWith('lifecard.') && k !== 'lifecard.aikey'){ localStorage.setItem(k, obj[k]); n++; }
+      }
+      alert('Imported ' + n + ' items. Reloading…');
+      location.reload();
+    } catch (e){ alert('Import failed: ' + e.message); }
+  };
+  r.readAsText(file);
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+</script>
+</body>
+</html>
